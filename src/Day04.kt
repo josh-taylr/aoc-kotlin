@@ -24,14 +24,9 @@ fun main() {
     part1(input).println()
 }
 
-data class Card(
-    val cardNumber: Int,
-    val winningNumbers: List<Int>,
-    val myNumbers: List<Int>
-) {
-    val matchingNumbers: List<Int> by lazy {
-        myNumbers.filter { num -> num in winningNumbers }
-    }
+data class Card(val cardNumber: Int, val winningNumbers: List<Int>, val myNumbers: List<Int>) {
+    val matchingNumbers: List<Int> by lazy { myNumbers.filter { num -> num in winningNumbers } }
+
     companion object {
         fun parse(input: String): Card {
             val whiteSpace = "\\s+".toPattern()
@@ -41,5 +36,5 @@ data class Card(
             val myNumbers = parts[2].trim().split(whiteSpace).map(String::toInt)
             return Card(cardNumber, winningNumbers, myNumbers)
         }
-    }  
+    }
 }

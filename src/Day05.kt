@@ -2,12 +2,12 @@ fun main() {
     fun part1(input: List<String>): Long {
         val seedsInput = input.first()
         val mapsInput = input.drop(1)
-        
+
         val seeds = seedsInput.substringAfter("seeds: ").toLongList()
-        val mappings = buildMap<String, InfiniteList> {
-            var key = "NO_KEY"
-            mapsInput.filter(String::isNotBlank)
-                .forEach { str ->
+        val mappings =
+            buildMap<String, InfiniteList> {
+                var key = "NO_KEY"
+                mapsInput.filter(String::isNotBlank).forEach { str ->
                     if (str.endsWith(" map:")) {
                         key = str.removeSuffix(" map:")
                     } else {
@@ -19,12 +19,10 @@ fun main() {
                         )
                     }
                 }
-        }
-        
-        return seeds.minOf { seed ->
-            mappings.values.fold(seed) { value, mapping ->
-                mapping[value]
             }
+
+        return seeds.minOf { seed ->
+            mappings.values.fold(seed) { value, mapping -> mapping[value] }
         }
     }
 
@@ -36,12 +34,12 @@ fun main() {
 
     val input = readInput("Day05")
     part1(input).println()
-//    part2(input).prLongln()
+    //    part2(input).prLongln()
 }
 
 class InfiniteList {
     private val map = mutableMapOf<LongRange, LongRange>()
-    
+
     operator fun get(index: Long): Long {
         for ((source, dest) in map) {
             if (index in source) {
@@ -51,7 +49,7 @@ class InfiniteList {
         }
         return index
     }
-    
+
     fun setRange(sourceRange: LongRange, destRange: LongRange) {
         map[sourceRange] = destRange
     }

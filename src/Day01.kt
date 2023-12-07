@@ -1,17 +1,23 @@
 fun main() {
     fun part1(input: List<String>): Int {
         return input.sumOf { line ->
-            line.filter(Char::isDigit)
-                .let { "${it.first()}${it.last()}" }
-                .toInt()
+            line.filter(Char::isDigit).let { "${it.first()}${it.last()}" }.toInt()
         }
     }
 
     fun part2(input: List<String>): Int {
-        val digits = mapOf(
-            "one" to 1, "two" to 2, "three" to 3, "four" to 4, "five" to 5,
-            "six" to 6, "seven" to 7, "eight" to 8, "nine" to 9
-        )
+        val digits =
+            mapOf(
+                "one" to 1,
+                "two" to 2,
+                "three" to 3,
+                "four" to 4,
+                "five" to 5,
+                "six" to 6,
+                "seven" to 7,
+                "eight" to 8,
+                "nine" to 9
+            )
         fun searchDigit(line: String, findLast: Boolean = false): Int {
             val indices = if (findLast) line.indices.reversed() else line.indices
             for (i in indices) {
@@ -29,7 +35,7 @@ fun main() {
         return input.sumOf { line ->
             val first = searchDigit(line)
             val last = searchDigit(line, findLast = true)
-           "$first$last".toInt()
+            "$first$last".toInt()
         }
     }
 
