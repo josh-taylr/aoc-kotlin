@@ -19,3 +19,11 @@ fun String.md5() = BigInteger(1, MessageDigest.getInstance("MD5").digest(toByteA
  * The cleaner shorthand for printing output.
  */
 fun Any?.println() = println(this)
+
+fun String.toIntList(): List<Int> = this.trim()
+   .split("\\s+".toPattern())
+   .map(String::toInt)
+
+fun String.toLongList(): List<Long> = this.trim()
+    .split("\\s+".toPattern())
+    .map(String::toLong)
