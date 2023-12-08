@@ -18,3 +18,11 @@ fun Any?.println() = println(this)
 fun String.toIntList(): List<Int> = this.trim().split("\\s+".toPattern()).map(String::toInt)
 
 fun String.toLongList(): List<Long> = this.trim().split("\\s+".toPattern()).map(String::toLong)
+
+fun CharSequence.asWrappingSequence(): Sequence<Char> = sequence{
+    var i = 0
+    do {
+        yield(this@asWrappingSequence[i])
+        i = (i + 1) % this@asWrappingSequence.count()
+    } while (true)
+}
