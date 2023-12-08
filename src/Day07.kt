@@ -26,7 +26,7 @@ data class Hand(val cards: String, val bid: Int) : Comparable<Hand> {
 
     private fun secondOrderingRule(other: Hand): Int =
         this.cards
-            .asSequence() // an unnecessarily optimisation, or logical execusion    
+            .asSequence() // an unnecessarily optimisation, or logical code execution
             .zip(other.cards.asSequence())
             .map { (a, b) -> labelOrder.indexOf(a).compareTo(labelOrder.indexOf(b)) }
             .first { it != 0 }
