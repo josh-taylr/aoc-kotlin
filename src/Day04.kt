@@ -15,13 +15,27 @@ fun main() {
     }
 
     fun part2(input: List<String>): Int {
-        return Int.MAX_VALUE
+        val cards = input.map(Card.Companion::parse).associateBy { it.cardNumber }
+        val deque = Pile(cards.values)
+        var pileCount = cards.count()
+        while (deque.isNotEmpty()) {
+            val card = deque.removeFirst()
+            val count = card.matchingNumbers.count()
+            for (i in card.cardNumber + 1..card.cardNumber + count) {
+                val nextCard = cards[i] ?: continue
+                deque.addLast(nextCard)
+                pileCount++
+            }
+
+        }
+        return pileCount
     }
 
     check(part1(readInput("Day04_test")) == 13)
 
     val input = readInput("Day04")
     part1(input).println()
+    part2(input).println()
 }
 
 data class Card(val cardNumber: Int, val winningNumbers: List<Int>, val myNumbers: List<Int>) {
@@ -38,3 +52,5 @@ data class Card(val cardNumber: Int, val winningNumbers: List<Int>, val myNumber
         }
     }
 }
+
+typealias Pile = ArrayDeque<Card>
