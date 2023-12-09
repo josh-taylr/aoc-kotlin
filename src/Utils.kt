@@ -15,6 +15,10 @@ fun String.md5() =
 /** The cleaner shorthand for printing output. */
 fun Any?.println() = println(this)
 
+fun checkValue(expected: Int, actual: Int) {
+    check(expected == actual) { "expected: $expected, actual: $actual" }
+}
+
 fun String.toIntList(): List<Int> = this.trim().split("\\s+".toPattern()).map(String::toInt)
 
 fun String.toLongList(): List<Long> = this.trim().split("\\s+".toPattern()).map(String::toLong)
@@ -26,3 +30,5 @@ fun CharSequence.asWrappingSequence(): Sequence<Char> = sequence{
         i = (i + 1) % this@asWrappingSequence.count()
     } while (true)
 }
+
+fun List<Int>.deltas() = this.zipWithNext { a, b -> b - a }
