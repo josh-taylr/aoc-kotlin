@@ -1,3 +1,8 @@
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.runBlocking
+
 fun main() {
     fun part1(input: List<String>): UInt {
         val seedsInput = input.first()
@@ -11,11 +16,11 @@ fun main() {
                     if (str.endsWith(" map:")) {
                         key = str.removeSuffix(" map:")
                     } else {
-                        val (destStart, sourceStart, rangeLen) = str.toUIntList()
+                        val (destinationStart, sourceStart, rangeLen) = str.toUIntList()
                         val list = getOrPut(key) { SeedMapping() }
                         list.setRange(
-                                source = (sourceStart..sourceStart + rangeLen),
-                                destination = (destStart..destStart + rangeLen),
+                            source = (sourceStart..sourceStart + rangeLen),
+                            destination = (destinationStart..destinationStart + rangeLen),
                         )
                     }
                 }
@@ -26,35 +31,42 @@ fun main() {
         }
     }
 
-    fun part2(input: List<String>): UInt {
+    fun part2(input: List<String>): UInt = runBlocking {
         val seedsInput = input.first()
         val mapsInput = input.drop(1)
 
-        val seedRanges = seedsInput.substringAfter("seeds: ").toUIntList()
-                .windowed(size = 2, step = 2)
-                .map { (start, len) -> UIntRange(start, start + len) }
+        val seedRanges =
+            seedsInput.substringAfter("seeds: ").toUIntList().windowed(size = 2, step = 2).map {
+                (start, len) ->
+                UIntRange(start, start + len)
+            }
         val mappings =
-                buildMap<String, SeedMapping> {
-                    var key = "NO_KEY"
-                    mapsInput.filter(String::isNotBlank).forEach { str ->
-                        if (str.endsWith(" map:")) {
-                            key = str.removeSuffix(" map:")
-                        } else {
-                            val (destStart, sourceStart, rangeLen) = str.toUIntList()
-                            val list = getOrPut(key) { SeedMapping() }
-                            list.setRange(
-                                    source = (sourceStart..sourceStart + rangeLen),
-                                    destination = (destStart..destStart + rangeLen),
-                            )
-                        }
+            buildMap<String, SeedMapping> {
+                var key = "NO_KEY"
+                mapsInput.filter(String::isNotBlank).forEach { str ->
+                    if (str.endsWith(" map:")) {
+                        key = str.removeSuffix(" map:")
+                    } else {
+                        val (destinationStart, sourceStart, rangeLen) = str.toUIntList()
+                        val list = getOrPut(key) { SeedMapping() }
+                        list.setRange(
+                            source = (sourceStart..sourceStart + rangeLen),
+                            destination = (destinationStart..destinationStart + rangeLen),
+                        )
                     }
                 }
-
-        return seedRanges.minOf { seedRange ->
-            seedRange.minOf { seed ->
-                mappings.values.fold(seed) { value, mapping -> mapping[value] }
             }
-        }
+
+        seedRanges
+            .map { seeds ->
+                async(Dispatchers.IO) {
+                    seeds.minOf { seed ->
+                        mappings.values.fold(seed) { value, mapping -> mapping[value] }
+                    }
+                }
+            }
+            .awaitAll()
+            .min()
     }
 
     checkValue(35U, part1(readInput("Day05_test")))
@@ -66,34 +78,29 @@ fun main() {
 }
 
 class SeedMapping {
-    private var list = mutableListOf(
-            0U to 0U,
-            UInt.MAX_VALUE to UInt.MAX_VALUE
-    )
+    private val list = mutableListOf(0U to 0U)
 
-    operator fun get(index: UInt): UInt {
-        val idx = list.binarySearchBy(index) { (source, _) -> source }
-        val (source, destination) = if (idx >= 0) list[idx] else list[insertionPoint(idx) - 1]
-        val offset = index - source
-        return destination + offset
-    }
+    operator fun get(index: UInt): UInt =
+        list.run {
+            val idx = binarySearchBy(index) { (source, _) -> source }
+            val (source, destination) = if (idx >= 0) get(idx) else get(-(idx + 1) - 1)
+            val offset = index - source
+            return destination + offset
+        }
 
-    fun setRange(source: UIntRange, destination: UIntRange) {
-        list = list.apply {
+    fun setRange(source: UIntRange, destination: UIntRange) =
+        list.run {
             val idx = binarySearchBy(source.first) { (source, _) -> source }
             if (idx >= 0) {
                 set(idx, source.first to destination.first)
-                // set an end for this range, unless a another range begins immediately
-                if (get(idx + 1).first != source.last)
+                // set an end for this range, unless another range begins immediately
+                if ((idx + 1) > lastIndex || get(idx + 1).first != source.last)
                     add(idx + 1, source.last to source.last)
             } else {
-                add(insertionPoint(idx), source.first to destination.first)
-                // set an end for this range, unless a another range begins immediately
-                if (get(insertionPoint(idx) + 1).first != source.last)
-                    add(insertionPoint(idx) + 1, source.last to source.last)
+                add(-(idx + 1), source.first to destination.first)
+                // set an end for this range, unless another range begins immediately
+                if ((-(idx + 1) + 1) > lastIndex || get(-(idx + 1) + 1).first != source.last)
+                    add(-(idx + 1) + 1, source.last to source.last)
             }
         }
-    }
-
-    private fun insertionPoint(idx: Int) = -(idx + 1)
 }
