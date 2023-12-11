@@ -4,9 +4,7 @@ import kotlin.math.roundToInt
 
 fun main() {
     fun part1(input: List<String>): Int {
-        return Maze.parse(input).run {
-            loopSize(start)
-        }
+        return Maze.parse(input).run { loopSize(start) }
     }
 
     fun part2(input: List<String>): Int {
@@ -26,7 +24,7 @@ data class Maze(val field: List<List<Pipe>>, val start: Pair<Int, Int>) {
         val (row, col) = start
         val new = neighbours(row, col).first()
         visited.addLast(new)
-        while(visited.lastOrNull() != start) {
+        while (visited.lastOrNull() != start) {
             val (row, col) = visited.lastOrNull() ?: start
             val new = neighbours(row, col).filterNot { it in visited.takeLast(2) }.first()
             visited.addLast(new)
@@ -47,7 +45,7 @@ data class Maze(val field: List<List<Pipe>>, val start: Pair<Int, Int>) {
     }
 
     private fun getPipe(row: Int, col: Int) =
-            field[row][col].takeUnless(Pipe::isStart) ?: validPipes(row, col).first()
+        field[row][col].takeUnless(Pipe::isStart) ?: validPipes(row, col).first()
 
     private fun validPipes(row: Int, col: Int): List<Pipe> {
         return buildList {
@@ -60,46 +58,56 @@ data class Maze(val field: List<List<Pipe>>, val start: Pair<Int, Int>) {
         }
     }
 
-    private fun hasUp(row: Int, col: Int) =
-            row > 0 &&  field[row - 1][col] in listOf(V,SW, SE)
+    private fun hasUp(row: Int, col: Int) = row > 0 && field[row - 1][col] in listOf(V, SW, SE)
+
     private fun hasRight(row: Int, col: Int) =
-            col < field[row].lastIndex && field[row][col + 1] in listOf(H, NW, SW)
+        col < field[row].lastIndex && field[row][col + 1] in listOf(H, NW, SW)
+
     private fun hasDown(row: Int, col: Int) =
-            row < field.lastIndex && field[row + 1][col] in listOf(V, NW, NE)
-    private fun hasLeft(row: Int, col: Int) =
-            col > 0 && field[row][col - 1] in listOf(H, NE, SE)
+        row < field.lastIndex && field[row + 1][col] in listOf(V, NW, NE)
+
+    private fun hasLeft(row: Int, col: Int) = col > 0 && field[row][col - 1] in listOf(H, NE, SE)
 
     companion object {
         fun parse(input: List<String>): Maze {
             var start: Pair<Int, Int>? = null
-            val field: List<List<Pipe>> = List(input.count()) { i ->
-                List(input[i].count()) { j ->
-                    val pipe = Pipe.parse(input[i][j])
-                    if (pipe == S) start = i to j
-                    pipe
+            val field: List<List<Pipe>> =
+                List(input.count()) { i ->
+                    List(input[i].count()) { j ->
+                        val pipe = Pipe.parse(input[i][j])
+                        if (pipe == S) start = i to j
+                        pipe
+                    }
                 }
-            }
             return Maze(field, start!!)
         }
     }
 
     enum class Pipe {
-        V, H, NE, NW, SW, SE, G, S;
+        V,
+        H,
+        NE,
+        NW,
+        SW,
+        SE,
+        G,
+        S;
 
         companion object {
-            fun parse(c: Char): Pipe = when (c) {
-                '|' -> V
-                '-' -> H
-                'L' -> NE
-                'J' -> NW
-                '7' -> SW
-                'F' -> SE
-                '.' -> G
-                'S' -> S
-                else -> error("Invalid Pipe character: '$c'")
-            }
+            fun parse(c: Char): Pipe =
+                when (c) {
+                    '|' -> V
+                    '-' -> H
+                    'L' -> NE
+                    'J' -> NW
+                    '7' -> SW
+                    'F' -> SE
+                    '.' -> G
+                    'S' -> S
+                    else -> error("Invalid Pipe character: '$c'")
+                }
 
-            fun isStart (it: Pipe) = it == S
+            fun isStart(it: Pipe) = it == S
         }
     }
 }

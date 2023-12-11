@@ -4,18 +4,18 @@ fun main() {
 
     fun part1(input: List<String>): Int {
         val instructions = input.first().asWrappingSequence().iterator()
-        val nodes = input.drop(2).map(LRNode::parse)
-            .associateBy { it.name }
-        
+        val nodes = input.drop(2).map(LRNode::parse).associateBy { it.name }
+
         var node = startNode
         var steps = 0
         do {
             val map = instructions.next()
-            node = when (map) {
-                'L' -> nodes[node]!!.left
-                'R' -> nodes[node]!!.right
-                else -> error("")
-            }
+            node =
+                when (map) {
+                    'L' -> nodes[node]!!.left
+                    'R' -> nodes[node]!!.right
+                    else -> error("")
+                }
             steps += 1
         } while (node != endNode)
 

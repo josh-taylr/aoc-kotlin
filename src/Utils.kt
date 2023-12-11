@@ -25,7 +25,7 @@ fun String.toUIntList(): List<UInt> = this.trim().split("\\s+".toPattern()).map(
 
 fun String.toLongList(): List<Long> = this.trim().split("\\s+".toPattern()).map(String::toLong)
 
-fun CharSequence.asWrappingSequence(): Sequence<Char> = sequence{
+fun CharSequence.asWrappingSequence(): Sequence<Char> = sequence {
     var i = 0
     do {
         yield(this@asWrappingSequence[i])

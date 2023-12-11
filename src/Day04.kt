@@ -26,7 +26,6 @@ fun main() {
                 deque.addLast(nextCard)
                 pileCount++
             }
-
         }
         return pileCount
     }
