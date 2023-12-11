@@ -34,3 +34,5 @@ fun CharSequence.asWrappingSequence(): Sequence<Char> = sequence {
 }
 
 fun List<Int>.deltas() = this.zipWithNext { a, b -> b - a }
+
+data class Point(val x: Int, val y: Int)
