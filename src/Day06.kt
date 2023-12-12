@@ -15,12 +15,8 @@ fun main() {
     }
 
     fun part2(input: List<String>): BigInteger {
-        val time = input[0].substringAfter("Time:")
-            .filter(Char::isDigit)
-            .toBigInteger()
-        val record = input[1].substringAfter("Distance:")
-            .filter(Char::isDigit)
-            .toBigInteger()
+        val time = input[0].substringAfter("Time:").filter(Char::isDigit).toBigInteger()
+        val record = input[1].substringAfter("Distance:").filter(Char::isDigit).toBigInteger()
 
         var minHold = 0.toBigInteger()
         var maxHold = time
@@ -30,7 +26,7 @@ fun main() {
         while (distance(maxHold, time) < record) {
             maxHold--
         }
-        
+
         return maxHold - minHold + 1.toBigInteger()
     }
 
