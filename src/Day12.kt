@@ -4,9 +4,12 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
 
+private const val debug = true
+
 fun main() {
     fun part1(input: List<String>): Int =
         input.map(String::toRecords).sumOf { (damaged, criteria) ->
+            println()
             damaged.countPossibleArrangements(criteria)
         }
 
@@ -62,10 +65,6 @@ private fun findStart(
     criteriaStart: Int
 ): Int = when {
     isNotPossible(record, recordStart, criteria, criteriaStart) -> ImpossibleRecord
-    isFixed(record, recordStart, criteria, criteriaStart) -> {
-        // record.concatToString().println()
-        FixedRecord
-    }
     else -> {
         val c = record[recordStart]
         sum(
@@ -96,10 +95,6 @@ private fun consumeGroup(
     criteriaStart: Int
 ): Int = when {
     isNotPossible(record, recordStart, criteria, criteriaStart) -> ImpossibleRecord
-    isFixed(record, recordStart, criteria, criteriaStart) -> {
-        // record.concatToString().println()
-        FixedRecord
-    }
     else -> {
         val c = record[recordStart]
         if (c == '#' || c == '?') criteria.runWithDecrement(criteriaStart) { decrementedCriteria ->
@@ -122,8 +117,8 @@ private fun endGroup(
     criteriaStart: Int
 ): Int = when {
     isNotPossible(record, recordStart, criteria, criteriaStart) -> ImpossibleRecord
-    isFixed(record, recordStart.inc(), criteria, criteriaStart) -> {
-        // record.concatToString().println()
+    isFixed(record, recordStart, criteria, criteriaStart) -> {
+        if (debug) record.concatToString().println()
         FixedRecord
     }
     else -> {
@@ -147,9 +142,8 @@ private fun findEnd(
         criteria: IntArray,
         criteriaStart: Int
 ): Int = when {
-    isNotPossible(record, recordStart, criteria, criteriaStart) -> ImpossibleRecord
-    isFixed(record, recordStart.inc(), criteria, criteriaStart) -> {
-        // record.concatToString().println()
+    isFixed(record, recordStart, criteria, criteriaStart) -> {
+        if (debug) record.concatToString().println()
         FixedRecord
     }
     else -> {
