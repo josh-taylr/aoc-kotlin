@@ -1,27 +1,27 @@
+import java.lang.Integer.sum
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
 
 fun main() {
-    fun part1(input: List<String>): Int {
-        return input.map(String::toRecords).sumOf { (record, criteria) ->
-            val permutations = findStart(record.toCharArray(), criteria.toIntArray())
-            permutations.count()
+    fun part1(input: List<String>): Int =
+        input.map(String::toRecords).sumOf { (damaged, criteria) ->
+            damaged.countPossibleArrangements(criteria)
         }
-    }
 
     fun part2(input: List<String>): Int = runBlocking {
         input.map { it.toRecords().expand(times = 4) }
-                .chunked(64)
-                .map { chunked ->
-                    async(Dispatchers.IO) {
-                        chunked.sumOf { (record, criteria) ->
-                            val permutations = findStart(record.toCharArray(), criteria.toIntArray())
-                            permutations.count()
-                        }
+            .chunked(32)
+            .map { chunked ->
+                async(Dispatchers.IO) {
+                    chunked.sumOf { (damaged, criteria) ->
+                        damaged.countPossibleArrangements(criteria)
                     }
-                }.awaitAll().sum()
+                }
+            }
+            .awaitAll()
+            .sum()
     }
 
     checkValue(21, part1(readInput("Day12_test")))
@@ -33,9 +33,9 @@ fun main() {
 
 private fun String.toRecords(): Pair<String, List<Int>> {
     val parts = split(" ")
-    val damagedConditions = parts[0]
-    val groupSizes = parts[1].split(",").map(String::toInt)
-    return damagedConditions to groupSizes
+    val record = parts[0]
+    val criteria = parts[1].split(",").map(String::toInt)
+    return record to criteria
 }
 
 private fun Pair<String, List<Int>>.expand(times: Int): Pair<String, List<Int>> {
@@ -44,69 +44,151 @@ private fun Pair<String, List<Int>>.expand(times: Int): Pair<String, List<Int>> 
     return expandedRecord to expandedCriteria
 }
 
-private fun findStart(record: CharArray, criteria: IntArray): List<CharArray> {
-    val remaining = criteria.sum() + (criteria.lastIndex)
-    return if (record.size < remaining)
-        emptyList()
-    else if (criteria.isEmpty() && record.contains('#'))
-        emptyList()
-    else if (record.isEmpty() && criteria.isNotEmpty())
-        emptyList()
-    else if (record.isEmpty() || criteria.isEmpty())
-        listOf(charArrayOf())
-    else when (val c = record.first()) {
-        '#' -> if (criteria.first() > 1)
-            consumeGroup(record.copyOfRange(1, record.size), criteria.copyOf().apply { this[0]-- }).map { charArrayOf('#') + it }
-        else
-            endGroup(record.copyOfRange(1, record.size), criteria.copyOfRange(1, criteria.size)).map { charArrayOf('#') + it }
-        '.' -> findStart(record.copyOfRange(1, record.size), criteria).map { charArrayOf('.') }
-        '?' -> if (criteria.first() > 1)
-            buildList {
-                addAll(consumeGroup(record.copyOfRange(1, record.size), criteria.copyOf().apply { this[0]-- }).map { charArrayOf('#') + it })
-                addAll(findStart(record.copyOfRange(1, record.size), criteria).map { charArrayOf('.') })
-            }
-        else
-            buildList {
-                addAll(endGroup(record.copyOfRange(1, record.size), criteria.copyOfRange(1, criteria.size)).map { charArrayOf('#') + it })
-                addAll(findStart(record.copyOfRange(1, record.size), criteria).map { charArrayOf('.') + it })
-            }
-        else -> error("Received unexpected character: $c")
+private fun String.countPossibleArrangements(criteria: List<Int>): Int =
+    findStart(
+        record = toCharArray(),
+        recordStart = 0,
+        criteria = criteria.toIntArray(),
+        criteriaStart = 0
+    )
+
+private const val ImpossibleRecord = 0
+private const val FixedRecord = 1
+
+private fun findStart(
+    record: CharArray,
+    recordStart: Int,
+    criteria: IntArray,
+    criteriaStart: Int
+): Int = when {
+    isNotPossible(record, recordStart, criteria, criteriaStart) -> ImpossibleRecord
+    isFixed(record, recordStart, criteria, criteriaStart) -> {
+        // record.concatToString().println()
+        FixedRecord
+    }
+    else -> {
+        val c = record[recordStart]
+        sum(
+                if (c == '#' || c == '?') criteria.runWithDecrement(criteriaStart) { decrementedCriteria ->
+                    record[recordStart] = '#'
+                    val res = if (decrementedCriteria[criteriaStart] > 0)
+                        consumeGroup(record, recordStart.inc(), decrementedCriteria, criteriaStart)
+                    else
+                        endGroup(record, recordStart.inc(), decrementedCriteria, criteriaStart.inc())
+                    record[recordStart] = c
+                    res
+                } else 0,
+
+                if (c == '.' || c == '?') {
+                    record[recordStart] = '.'
+                    val res = findStart(record, recordStart.inc(), criteria, criteriaStart)
+                    record[recordStart] = c
+                    res
+                } else 0
+        )
     }
 }
 
-private fun consumeGroup(record: CharArray, criteria: IntArray): List<CharArray> {
-    val remaining = criteria.sum() + (criteria.lastIndex)
-    return if (record.size < remaining)
-        emptyList()
-    else if (criteria.isEmpty() && record.contains('#'))
-        emptyList()
-    else if (record.isEmpty() && criteria.isNotEmpty())
-        emptyList()
-    else if (record.isEmpty() || criteria.isEmpty())
-        listOf(charArrayOf())
-    else when (val c = record.first()) {
-        '#', '?' -> if (criteria.first() > 1)
-            consumeGroup(record.copyOfRange(1, record.size), criteria.copyOf().apply { this[0]-- }).map { charArrayOf('#') + it }
-        else
-            endGroup(record.copyOfRange(1, record.size), criteria.copyOfRange(1, criteria.size)).map { charArrayOf('#') + it }
-        '.' -> emptyList()
-        else -> error("Received unexpected character: $c")
+private fun consumeGroup(
+    record: CharArray,
+    recordStart: Int,
+    criteria: IntArray,
+    criteriaStart: Int
+): Int = when {
+    isNotPossible(record, recordStart, criteria, criteriaStart) -> ImpossibleRecord
+    isFixed(record, recordStart, criteria, criteriaStart) -> {
+        // record.concatToString().println()
+        FixedRecord
+    }
+    else -> {
+        val c = record[recordStart]
+        if (c == '#' || c == '?') criteria.runWithDecrement(criteriaStart) { decrementedCriteria ->
+            record[recordStart] = '#'
+            val res = if (decrementedCriteria[criteriaStart] > 0)
+                consumeGroup(record, recordStart.inc(), decrementedCriteria, criteriaStart)
+            else
+                endGroup(record, recordStart.inc(), decrementedCriteria, criteriaStart.inc())
+            record[recordStart] = c
+            res
+        } else
+            ImpossibleRecord
     }
 }
 
-private fun endGroup(record: CharArray, criteria: IntArray): List<CharArray> {
-    val remaining = criteria.sum() + (criteria.lastIndex)
-    return if (record.size < remaining)
-        emptyList()
-    else if (criteria.isEmpty() && record.contains('#'))
-        emptyList()
-    else if (record.isEmpty() && criteria.isNotEmpty())
-        emptyList()
-    else if (record.isEmpty() || criteria.isEmpty())
-        listOf(charArrayOf())
-    else when (val c = record.first()) {
-        '.', '?' -> findStart(record.copyOfRange(1, record.size), criteria).map { charArrayOf('.') }
-        '#' -> emptyList()
-        else -> error("Received unexpected character: $c")
+private fun endGroup(
+    record: CharArray,
+    recordStart: Int,
+    criteria: IntArray,
+    criteriaStart: Int
+): Int = when {
+    isNotPossible(record, recordStart, criteria, criteriaStart) -> ImpossibleRecord
+    isFixed(record, recordStart.inc(), criteria, criteriaStart) -> {
+        // record.concatToString().println()
+        FixedRecord
     }
+    else -> {
+        val c = record[recordStart]
+        if (c == '.' || c == '?') {
+            record[recordStart] = '.'
+            val res = if (criteria.last() > 0)
+                findStart(record, recordStart.inc(), criteria, criteriaStart)
+            else
+                findEnd(record, recordStart.inc(), criteria, criteriaStart)
+            record[recordStart] = c
+            res
+        } else
+            ImpossibleRecord
+    }
+}
+
+private fun findEnd(
+        record: CharArray,
+        recordStart: Int,
+        criteria: IntArray,
+        criteriaStart: Int
+): Int = when {
+    isNotPossible(record, recordStart, criteria, criteriaStart) -> ImpossibleRecord
+    isFixed(record, recordStart.inc(), criteria, criteriaStart) -> {
+        // record.concatToString().println()
+        FixedRecord
+    }
+    else -> {
+        val c = record[recordStart]
+        if (c == '.' || c == '?') {
+            record[recordStart] = '.'
+            val res = findEnd(record, recordStart.inc(), criteria, criteriaStart)
+            record[recordStart] = c
+            res
+        } else
+            ImpossibleRecord
+    }
+}
+
+private fun isNotPossible(
+    record: CharArray,
+    recordStart: Int,
+    criteria: IntArray,
+    criteriaStart: Int
+): Boolean {
+    val hasConsumedRecord = recordStart > record.lastIndex
+    val hasConsumedCriteria = criteriaStart > criteria.lastIndex
+    return hasConsumedRecord && !hasConsumedCriteria
+}
+
+private fun isFixed(
+    record: CharArray,
+    recordStart: Int,
+    criteria: IntArray,
+    criteriaStart: Int
+): Boolean {
+    val hasConsumedRecord = recordStart > record.lastIndex
+    val hasConsumedCriteria = criteriaStart > criteria.lastIndex
+    return hasConsumedRecord && hasConsumedCriteria
+}
+
+private inline fun <R> IntArray.runWithDecrement(index: Int = 0, action: (IntArray) -> R): R {
+    this[index] -= 1
+    val result = action(this)
+    this[index] += 1
+    return result
 }
