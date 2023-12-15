@@ -1,12 +1,15 @@
 fun main() {
     fun part1(input: List<String>): Int {
-        return input.toPatterns().sumOf(List<String>::summarise)
+        return input.toPatterns()
+                .map(List<String>::summarise)
+                .sum()
     }
 
     fun part2(input: List<String>): Int {
         return Int.MAX_VALUE
     }
 
+    allChecks()
     checkValue(405, part1(readInput("Day13_test")))
 
     val input = readInput("Day13")
@@ -30,16 +33,16 @@ private fun Iterable<String>.toPatterns(): List<List<String>> = buildList {
 private fun List<String>.summarise() = findMirrorColumn() + (findMirrorRow() * 100)
 
 private fun List<String>.findMirrorRow(): Int {
-    val acceptableRanges = indices.allRanges()
-    return acceptableRanges.firstOrNull { range ->
-        subList(range.first, range.last).isPalindrome()
+    val acceptableIndices = indices.allRanges()
+    return acceptableIndices.firstOrNull { indices ->
+        slice(indices).isPalindrome()
     }?.reflectionPoint() ?: 0
 }
 
 private fun List<String>.findMirrorColumn(): Int {
-    val acceptableRanges = firstOrNull()?.indices.allRanges()
-    return acceptableRanges.firstOrNull { range ->
-        all { row -> row.substring(range.first, range.last).isPalindrome() }
+    val acceptableIndices = firstOrNull()?.indices.allRanges()
+    return acceptableIndices.firstOrNull { indices ->
+        all { row -> row.slice(indices).isPalindrome() }
     }?.reflectionPoint() ?: 0
 }
 
@@ -58,14 +61,48 @@ private fun List<String>.isPalindrome(): Boolean {
 }
 
 private fun IntRange.reflectionPoint() =
-        if (!isEmpty()) first + (last - first) / 2 else 0
+        if (!isEmpty()) (first + (last - first) / 2) + ((last - first) % 2) else 0
 
-private fun IntRange?.allRanges() = this?.let { str ->
+private fun IntRange?.allRanges() = this?.let { range ->
     buildSet {
-        add(str)
-        for (i in 1..<(str.count() - 3)) {
-            add(0..(str.last - i))
-            add(i..str.last)
+        add(range)
+        for (i in 1..(range.last - 1)) {
+            add(0..(range.last - i))
+            add(i..range.last)
         }
     }
 } ?: emptySet()
+
+private fun allChecks() {
+    // String.isPalindrome
+    check("##".isPalindrome())
+    check("#.#".isPalindrome())
+    check(!"#.".isPalindrome())
+    check(!"#..".isPalindrome())
+
+    // List<String>.isPalindrome
+    check(listOf("#", "#").isPalindrome())
+    check(listOf("#", ".", "#").isPalindrome())
+    check(!listOf("#", ".").isPalindrome())
+    check(!listOf("#", ".", ".").isPalindrome())
+
+    // reflectionPoint
+    checkValue(1, (0..1).reflectionPoint()) // ^##
+    checkValue(1, (0..2).reflectionPoint()) // ^#.#
+    checkValue(3, (2..3).reflectionPoint()) // ..##$
+    checkValue(2, (1..3).reflectionPoint()) // .###$
+    checkValue(4, (3..4).reflectionPoint()) // ...##$
+    checkValue(3, (2..4).reflectionPoint()) // ..###$
+
+    // allRanges
+    checkValue(setOf(0..2, 0..1, 1..2), "#.#".indices.allRanges())
+    checkValue(setOf(0..3, 0..2, 1..3, 0..1, 2..3), "#.#.".indices.allRanges())
+
+    // findMirrorRow
+    val testInput = listOf(
+            "..#",
+            "..#",
+            "###",
+    )
+    checkValue(1, testInput.findMirrorRow())
+}
