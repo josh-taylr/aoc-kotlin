@@ -26,11 +26,13 @@ class Platform(val spaces: Array<Array<Space>>) {
     }
 
     fun calcLoad(): Int =
-            spaces.mapIndexed { idx, row ->
+        spaces
+            .mapIndexed { idx, row ->
                 val loadPerRoundSpace = spaces.size - idx
                 val roundSpaces = row.count { space -> space == Round }
                 (roundSpaces * loadPerRoundSpace)
-            }.sum()
+            }
+            .sum()
 
     override fun toString(): String {
         return spaces.joinToString(System.lineSeparator()) { row ->
