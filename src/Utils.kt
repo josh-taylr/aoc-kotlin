@@ -33,6 +33,10 @@ fun CharSequence.asWrappingSequence(): Sequence<Char> = sequence {
     } while (true)
 }
 
+inline fun <reified T> Array<Array<T>>.deepCopy(): Array<Array<T>> {
+    return Array(size) { row -> Array(this[row].size) { col -> this[row][col] } }
+}
+
 fun List<Int>.deltas() = this.zipWithNext { a, b -> b - a }
 
 data class Point(val x: Int, val y: Int)

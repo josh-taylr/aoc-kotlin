@@ -2,10 +2,9 @@ import Platform.Space.*
 
 fun main() {
     fun part1(input: List<String>): Int {
-//        val platform = Platform.parse(input)
-//        platform.moveLever(Platform.Tilt.North)
-//        return platform.calcLoad()
-        return Int.MAX_VALUE
+        val platform = Platform.parse(input)
+        platform.moveLever(Platform.Tilt.North)
+        return platform.calcLoad()
     }
 
     fun part2(input: List<String>): Int {
@@ -26,11 +25,12 @@ class Platform(val spaces: Array<Array<Space>>) {
         }
     }
 
-    fun calcLoad(): Int = spaces.mapIndexed { idx, row ->
-        val loadPerRoundSpace = spaces.size - idx
-        val roundSpaces = row.count { space -> space == Round }
-        (roundSpaces * loadPerRoundSpace).also { it.println() }
-    }.sum()
+    fun calcLoad(): Int =
+            spaces.mapIndexed { idx, row ->
+                val loadPerRoundSpace = spaces.size - idx
+                val roundSpaces = row.count { space -> space == Round }
+                (roundSpaces * loadPerRoundSpace)
+            }.sum()
 
     override fun toString(): String {
         return spaces.joinToString(System.lineSeparator()) { row ->
@@ -38,63 +38,81 @@ class Platform(val spaces: Array<Array<Space>>) {
         }
     }
 
-    override fun equals(other: Any?) = when (other) {
-        is Platform -> this.spaces.contentDeepEquals(other.spaces)
-        else -> false
-    }
+    override fun equals(other: Any?) =
+        when (other) {
+            is Platform -> this.spaces.contentDeepEquals(other.spaces)
+            else -> false
+        }
 
     override fun hashCode(): Int {
         return spaces.contentDeepHashCode()
     }
 
     private fun Array<Array<Space>>.tiltNorth() {
-        for (col in this.first().indices) {
-            // FIXME: sortBy performs a shallow copy :(
-            val sortedByCol = sortedBy { row -> row[col] }
-            for (row in this.indices) {
-                this[row][col] = sortedByCol[row][col]
+        for (col in first().indices) {
+            var start = 0
+            for (row in indices) {
+                if (this[row][col] == Cube) {
+                    sort(col, start, row)
+                    start = row + 1
+                }
             }
+            sort(col, start, size)
         }
     }
 
-    sealed class Space(val char: Char): Comparable<Space> {
+    private fun Array<Array<Space>>.sort(col: Int, start: Int, endExclusive: Int) {
+        if (endExclusive - start <= 1) return
+        val subColumn = Array(endExclusive - start) { row -> this[start + row][col] }
+        subColumn.sort()
+        subColumn.forEachIndexed { row, _ -> this[start + row][col] = subColumn[row] }
+    }
 
-        object Round : Space('O') {
-            override fun compareTo(other: Space): Int = when(other) {
-                Cube -> 0
-                Empty -> -1
-                Round -> 0
+    sealed class Space(val char: Char) : Comparable<Space> {
+
+        data object Round : Space('O')
+
+        data object Empty : Space('.')
+
+        data object Cube : Space('#')
+
+        override fun compareTo(other: Space) =
+            when {
+                (this is Cube || other is Cube) -> 0
+                this is Round ->
+                    when (other) {
+                        is Round -> 0
+                        else -> -1
+                    }
+                else ->
+                    when (other) {
+                        is Round -> 1
+                        else -> 0
+                    }
             }
-        }
-
-        object Empty : Space('.') {
-            override fun compareTo(other: Space): Int = when(other) {
-                Cube -> 0
-                Empty -> 0
-                Round -> 1
-            }
-        }
-
-        object Cube : Space('#') {
-            override fun compareTo(other: Space): Int = 0
-        }
 
         companion object {
-            fun toSpace(c: Char) = when (c) {
-                'O' -> Round
-                '.' -> Empty
-                '#' -> Cube
-                else -> error("Unexpected char: $c")
-            }
+            fun toSpace(c: Char) =
+                when (c) {
+                    'O' -> Round
+                    '.' -> Empty
+                    '#' -> Cube
+                    else -> error("Unexpected char: $c")
+                }
         }
     }
-    enum class Tilt { North, East, South, West }
+
+    enum class Tilt {
+        North,
+        East,
+        South,
+        West
+    }
+
     companion object {
 
         fun parse(input: List<String>): Platform {
-            val matrix = input.map { str ->
-                str.map(Space::toSpace).toTypedArray()
-            }.toTypedArray()
+            val matrix = input.map { str -> str.map(Space::toSpace).toTypedArray() }.toTypedArray()
             return Platform(matrix)
         }
     }
@@ -103,7 +121,8 @@ class Platform(val spaces: Array<Array<Space>>) {
 private fun allChecks(testInput: List<String>) {
 
     val platform = Platform.parse(testInput)
-    checkValue("""
+    checkValue(
+        """
         O....#....
         O.OO#....#
         .....##...
@@ -114,9 +133,13 @@ private fun allChecks(testInput: List<String>) {
         .......O..
         #....###..
         #OO..#....
-    """.trimIndent(), platform.toString())
+    """
+            .trimIndent(),
+        platform.toString()
+    )
     platform.moveLever(Platform.Tilt.North)
-    checkValue("""
+    checkValue(
+        """
         OOOO.#.O..
         OO..#....#
         OO..O##..O
@@ -127,6 +150,9 @@ private fun allChecks(testInput: List<String>) {
         ..O.......
         #....###..
         #....#....
-    """.trimIndent(), platform.toString())
+    """
+            .trimIndent(),
+        platform.toString()
+    )
     checkValue(136, platform.calcLoad())
 }
