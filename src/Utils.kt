@@ -45,6 +45,8 @@ data class Point(val x: Int, val y: Int)
 data class Vector2D(var x: Int, var y: Int) {
     operator fun plus(v: Vector2D) = Vector2D(x + v.x, y + v.y)
     operator fun minus(v: Vector2D) = Vector2D(x - v.x, y - v.y)
+    operator fun times(scalar: Int) = Vector2D(x * scalar, y * scalar)
+    operator fun div(scalar: Int) = Vector2D(x / scalar, y / scalar)
     fun inRanges(xRange: IntRange, yRange: IntRange) = x in xRange && y in yRange
     fun coerceIn(xRange: IntRange, yRange: IntRange) = Vector2D(x.coerceIn(xRange), y.coerceIn(yRange))
     fun distance(v: Vector2D) = sqrt((x - v.x).toDouble().pow(2) + (y - v.y).toDouble().pow(2))
@@ -86,17 +88,16 @@ fun <T> aStar(
     val bestGuess = mutableMapOf<T, Double>().withDefault { Double.POSITIVE_INFINITY }
     bestGuess[start] = heuristic(start)
 
-    val discovered = sortedSetOf<T>({ o1, o2 ->
-        bestGuess.getValue(o1).compareTo(bestGuess.getValue(o2))
-    }, start)
+    val discovered = mutableSetOf(start)
     val preceding = mutableMapOf<T, T>()
 
     while (discovered.isNotEmpty()) {
-        val current = discovered.removeFirst()
+        val current = discovered.minByOrNull{ bestGuess.getValue(it) } ?: error("")
         if (goal(current)) {
             return reconstructPath(preceding, current)
         }
 
+        discovered.remove(current)
         for (neighbor in neighbors(current)) {
             val tentative = minCosts.getValue(current) + weight(current, neighbor)
             if (tentative < minCosts.getValue(neighbor)) {

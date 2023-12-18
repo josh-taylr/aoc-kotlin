@@ -5,7 +5,17 @@ import Crucible.Companion.UP
 
 fun main() {
     fun part1(input: List<String>): Int {
-        return Int.MAX_VALUE
+        val heatLossMap = HeatLossMap(input)
+        val goalBlock = Vector2D(140, 140)
+        val results = aStar<Crucible>(
+                start = Crucible(Vector2D(0, 0), RIGHT, blocksTraveled = 0),
+                goal = { it.block == goalBlock },
+                heuristic = { it.block.distance(goalBlock) },
+                neighbors = { it.getNeighbours().filter { it.block in heatLossMap } },
+                weight = { _, n -> heatLossMap.getValue(n.block).toDouble() },
+        )
+        heatLossMap.overlay(results?.drop(1)).println()
+        return results?.drop(1)?.sumOf { heatLossMap.getValue(it.block) } ?:0
     }
 
     fun part2(input: List<String>): Int {
@@ -46,11 +56,10 @@ private data class Crucible(
         val blocksTraveled: Int = 1
 ) {
     val canContinueForward = blocksTraveled < MAX_TRAVELED
-    val backWards = direction.rotate(180.0)
-    val canContinueUp = backWards != UP && (direction != UP || canContinueForward)
-    val canContinueRight = backWards != RIGHT && (direction != RIGHT || canContinueForward)
-    val canContinueDown = backWards != DOWN && (direction != DOWN || canContinueForward)
-    val canContinueLeft = backWards != LEFT && (direction != LEFT || canContinueForward)
+    val canContinueUp = direction * -1 != UP && (direction != UP || canContinueForward)
+    val canContinueRight = direction * -1 != RIGHT && (direction != RIGHT || canContinueForward)
+    val canContinueDown = direction * -1 != DOWN && (direction != DOWN || canContinueForward)
+    val canContinueLeft = direction * -1 != LEFT && (direction != LEFT || canContinueForward)
 
     fun getNeighbours() = buildSet<Crucible> {
         if (canContinueForward) {
@@ -74,19 +83,27 @@ private data class Crucible(
 
     override fun hashCode() = listOf(
             block.hashCode(),
-            direction.hashCode(),
-            Integer.valueOf(blocksTraveled).hashCode(),
-//            canContinueUp.hashCode(),
-//            canContinueRight.hashCode(),
-//            canContinueDown.hashCode(),
-//            canContinueLeft.hashCode(),
+//            direction.hashCode(),
+//            blocksTraveled.hashCode(),
+            run {
+                listOf(
+                        canContinueUp,
+                        canContinueRight,
+                        canContinueDown,
+                        canContinueLeft,
+                ).fold(0) { acc, b -> (acc shl 1) or if (b) 1 else 0 }
+            }
     ).reduce { acc, hash -> (acc * 31) + hash }
 
     override fun equals(other: Any?) = when (other) {
-        is Crucible -> hashCode() == other.hashCode()
-//            (this.block == other.block)
-//                && (this.direction == other.direction)
-//                && (this.canContinueForward == other.canContinueForward)
+        is Crucible ->
+            block == other.block
+//            && direction == other.direction
+//            && blocksTraveled == other.blocksTraveled
+            && canContinueUp == other.canContinueUp
+            && canContinueRight == other.canContinueRight
+            && canContinueDown == other.canContinueDown
+            && canContinueLeft == other.canContinueLeft
         else -> false
     }
 
@@ -122,12 +139,11 @@ private fun allChecks(input: List<String>) {
     val heatLossMap = HeatLossMap(input)
     val goalBlock = Vector2D(12, 12)
     val results = aStar<Crucible>(
-            start = Crucible(Vector2D(0, 0), RIGHT),
+            start = Crucible(Vector2D(0, 0), RIGHT, blocksTraveled = 0),
             goal = { it.block == goalBlock },
-            heuristic = { it.block.distance(goalBlock) },
+            heuristic = { it.block.distance(goalBlock).toDouble() },
             neighbors = { it.getNeighbours().filter { it.block in heatLossMap } },
-            weight = { c, n -> heatLossMap.getValue(n.block).toDouble() },
+            weight = { _, n -> heatLossMap.getValue(n.block).toDouble() },
     )
-    heatLossMap.overlay(results?.drop(1)).println()
     checkValue(102, results?.drop(1)?.sumOf { heatLossMap.getValue(it.block) } ?:0 )
 }
