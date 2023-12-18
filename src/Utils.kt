@@ -2,6 +2,7 @@ import java.math.BigInteger
 import java.security.MessageDigest
 import kotlin.io.path.Path
 import kotlin.io.path.readLines
+import kotlin.math.*
 
 /** Reads lines from the given input txt file. */
 fun readInput(name: String) = Path("src/$name.txt").readLines()
@@ -40,3 +41,73 @@ inline fun <reified T> Array<Array<T>>.deepCopy(): Array<Array<T>> {
 fun List<Int>.deltas() = this.zipWithNext { a, b -> b - a }
 
 data class Point(val x: Int, val y: Int)
+
+data class Vector2D(var x: Int, var y: Int) {
+    operator fun plus(v: Vector2D) = Vector2D(x + v.x, y + v.y)
+    operator fun minus(v: Vector2D) = Vector2D(x - v.x, y - v.y)
+    fun inRanges(xRange: IntRange, yRange: IntRange) = x in xRange && y in yRange
+    fun coerceIn(xRange: IntRange, yRange: IntRange) = Vector2D(x.coerceIn(xRange), y.coerceIn(yRange))
+    fun distance(v: Vector2D) = sqrt((x - v.x).toDouble().pow(2) + (y - v.y).toDouble().pow(2))
+    fun manhattanDistance(v: Vector2D) = abs(x - v.x) + abs(y - v.y)
+
+    fun rotate(degrees: Double): Vector2D {
+        val radians = Math.toRadians(degrees)
+        val cos = cos(radians)
+        val sin = sin(radians)
+
+        val nx = x * cos - y * sin
+        val ny = x * sin + y * cos
+
+        return Vector2D(nx.toInt(), ny.toInt())
+    }
+}
+
+fun <T> aStar(
+        start: T,
+        goal: (T) -> Boolean,
+        heuristic: (T) -> Double,
+        neighbors: (T) -> Iterable<T>,
+        weight: (current: T, neighbour: T) -> Double
+): List<T>? {
+
+    fun <T> reconstructPath(preceding: MutableMap<T, T>, current: T): List<T> {
+        val totalPath = mutableListOf(current)
+        var currentTemp = current
+        while (currentTemp in preceding.keys) {
+            currentTemp = preceding[currentTemp]!!
+            totalPath.add(0, currentTemp)
+        }
+        return totalPath
+    }
+
+    val minCosts = mutableMapOf<T, Double>().withDefault { Double.POSITIVE_INFINITY }
+    minCosts[start] = 0.0
+
+    val bestGuess = mutableMapOf<T, Double>().withDefault { Double.POSITIVE_INFINITY }
+    bestGuess[start] = heuristic(start)
+
+    val discovered = sortedSetOf<T>({ o1, o2 ->
+        bestGuess.getValue(o1).compareTo(bestGuess.getValue(o2))
+    }, start)
+    val preceding = mutableMapOf<T, T>()
+
+    while (discovered.isNotEmpty()) {
+        val current = discovered.removeFirst()
+        if (goal(current)) {
+            return reconstructPath(preceding, current)
+        }
+
+        for (neighbor in neighbors(current)) {
+            val tentative = minCosts.getValue(current) + weight(current, neighbor)
+            if (tentative < minCosts.getValue(neighbor)) {
+                preceding[neighbor] = current
+                minCosts[neighbor] = tentative
+                bestGuess[neighbor] = tentative + heuristic(neighbor)
+                if (neighbor !in discovered) {
+                    discovered.add(neighbor)
+                }
+            }
+        }
+    }
+    return null
+}
