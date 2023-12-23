@@ -1,18 +1,13 @@
+import CompassPoints.*
+
 fun main() {
-    fun part1(input: List<String>): Int {
-        DigPlan(input).apply {
-            "Offsets: x -> $xOffset, y -> $yOffset".println()
-            "Dimensions: width -> $width, height -> $height".println()
-            createString().println()
-        }
-        return Int.MAX_VALUE
-    }
+    fun part1(input: List<String>) = DigPlan(input).calcVolume()
 
     fun part2(input: List<String>): Int {
         return Int.MAX_VALUE
     }
 
-//    allChecks(readInput("Day18_test"))
+    checkValue(62, part1(readInput("Day18_test")))
 
     val input = readInput("Day18")
     part1(input).println()
@@ -20,27 +15,20 @@ fun main() {
 
 private class DigPlan(input: List<String>) {
 
-    val records = input.map { line ->
-        val tokens = line.split(" ")
-        val direction = tokens[0].single()
-        val distance = tokens[1].toInt()
-        val vec = when (direction) {
-            'U' -> Vector2D(0, -1)
-            'R' -> Vector2D(1, 0)
-            'D' -> Vector2D(0, 1)
-            'L' -> Vector2D(-1, 0)
-            else -> throw IllegalArgumentException("Unknown direction: $direction")
-        }
-        vec * distance
-    }
+    val records = parseRecords(input)
 
     val geoMap: Map<Int, Set<Int>> = buildMap<Int, MutableList<Int>> {
         set(0, mutableListOf(0)) // initial hole
         var loc = Vector2D(0, 0)
         for (r in records) {
-            loc += r
-            val e = getOrPut(loc.y) { mutableListOf() }
-            e.addLast(loc.x)
+            val next = loc + r
+            val dir = (next - loc).normalise()
+            while (loc != next) {
+                loc += dir
+                val e = getOrPut(loc.y) { mutableListOf() }
+                e.addLast(loc.x)
+            }
+            loc = next
         }
     }.mapValues { (_, v) -> v.toSortedSet() }.toSortedMap()
 
@@ -49,28 +37,29 @@ private class DigPlan(input: List<String>) {
     val width = geoMap.values.maxOf { it.last() } - xOffset + 1
     val height = geoMap.keys.last() - yOffset + 1
 
-    fun createString(): String {
-        var prev = BooleanArray(width) { false }
-        return (0..<height).joinToString(System.lineSeparator()) { y ->
-            val trenches = geoMap.getOrDefault(y, emptySet())
-            val curr = BooleanArray(width) { x -> (x in trenches) }
-            val next = BooleanArray(width) { x -> curr[x] xor prev[x] }
-            val combined = next.zip(curr).map { (n, c) -> n || c }
-            prev = next
-            var isTrench = false
-            next.mapIndexed { index, b ->
-                val res = isTrench || b
-                isTrench = isTrench xor b
-                res
-            }.joinToString("") { if (it) "#" else "." }
-        }
+    fun createString() = (0..<height).joinToString(System.lineSeparator()) { y ->
+        val trenches = geoMap.getOrDefault(y + yOffset, emptySet())
+        CharArray(width) { if (it + xOffset in trenches) '#' else '.' }.joinToString("")
     }
-}
 
-private fun allChecks(testInput: List<String>) {
-    DigPlan(testInput).apply {
-        "Offsets: x -> $xOffset, y -> $yOffset".println()
-        "Dimensions: width -> $width, height -> $height".println()
-        createString().println()
+    fun calcVolume(): Int {
+        val firstCorner = geoMap.entries.first().let { (y, xs) -> Point(xs.first() - xOffset, y - yOffset) }
+        return createString().fill(firstCorner + SouthEast, '.', '#').count { it == '#' }
+    }
+
+    private fun parseRecords(input: List<String>): List<Vector2D> {
+        return input.map { line ->
+            val tokens = line.split(" ")
+            val direction = tokens[0].single()
+            val distance = tokens[1].toInt()
+            val vec = when (direction) {
+                'U' -> North
+                'R' -> East
+                'D' -> South
+                'L' -> West
+                else -> throw IllegalArgumentException("Unknown direction: $direction")
+            }
+            vec * distance
+        }
     }
 }
