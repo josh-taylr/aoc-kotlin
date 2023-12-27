@@ -82,6 +82,18 @@ open class Vector2D(var x: Int, var y: Int) {
         val mag = magnitude()
         return Vector2D((x / mag).toInt(), (y / mag).toInt())
     }
+
+    fun pointBetween(other: Vector2D): List<Vector2D> {
+        return when {
+            x == other.x -> (y..other.y).map { Vector2D(x, it) }.let {
+                if (it.size > 1) it.minus(this) else it
+            }
+            y == other.y -> (x..other.x).map { Vector2D(it, y) }.minus(this).let {
+                if (it.size > 1) it.minus(this) else it
+            }
+            else -> error("Unsupported")
+        }
+    }
 }
 
 typealias Point = Vector2D
