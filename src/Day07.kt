@@ -6,42 +6,72 @@ fun main() {
     }
 
     fun part2(input: List<String>): Int {
-        return Int.MAX_VALUE
+        val sortedHands = input.map(Hand::parse).sortedWith(Hand.JokerHandComparator)
+        val ranks = 1..sortedHands.count()
+        return sortedHands.zip(ranks).sumOf { (hand, rank) -> hand.bid * rank }
     }
 
-    check(part1(readInput("Day07_test")) == 6440)
+    checkValue(6440, part1(readInput("Day07_test")))
+    checkValue(5905, part2(readInput("Day07_test")))
 
     val input = readInput("Day07")
     part1(input).println()
+    part2(input).println()
 }
 
 data class Hand(val cards: String, val bid: Int) : Comparable<Hand> {
 
-    val type = Type.parse(cards)
+    private val type = Type.parse(cards)
 
-    override fun compareTo(other: Hand): Int =
-        type.compareTo(other.type).takeIf { it != 0 } ?: secondOrderingRule(other)
+    override fun compareTo(other: Hand) = DefaultHandComparator.compare(this, other)
 
     override fun toString() = "Hand(cards=$cards, bid=$bid, type=${type.name})"
 
-    private fun secondOrderingRule(other: Hand): Int =
-        this.cards
-            .asSequence() // an unnecessarily optimisation, or logical code execution
-            .zip(other.cards.asSequence())
-            .map { (a, b) -> labelOrder.indexOf(a).compareTo(labelOrder.indexOf(b)) }
-            .first { it != 0 }
-
     companion object {
-        val labelOrder =
-            listOf('A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2').reversed()
-
         fun parse(input: String): Hand {
             val (cards, bid) = input.split(" ")
             return Hand(cards, bid.toInt())
         }
+
+        val DefaultHandComparator =
+            object : Comparator<Hand> {
+
+                val labelOrder =
+                    listOf('2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A')
+
+                override fun compare(a: Hand, b: Hand) =
+                    a.type.compareTo(b.type).takeIf { it != 0 }
+                        ?: SecondOrderingRule(labelOrder).compare(a, b)
+            }
+
+        val JokerHandComparator =
+            object : Comparator<Hand> {
+
+                val labelOrder =
+                    listOf('J', '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'Q', 'K', 'A')
+
+                override fun compare(a: Hand, b: Hand) =
+                    bestHand(a).type.compareTo(bestHand(b).type).takeIf { it != 0 }
+                        ?: SecondOrderingRule(labelOrder).compare(a, b)
+
+                fun bestHand(hand: Hand): Hand =
+                    hand.run {
+                        val labelCounts = cards.groupingBy { it }.eachCount()
+                        val commonCard =
+                            labelCounts.filterKeys { it != 'J' }.maxByOrNull { it.value }
+                        if (commonCard == null) {
+                            Hand(
+                                cards.replace('J', labelOrder.last()),
+                                bid
+                            ) // cards in hand are all jokers
+                        } else {
+                            Hand(cards.replace('J', commonCard.key), bid)
+                        }
+                    }
+            }
     }
 
-    enum class Type {
+    private enum class Type {
         HighCard,
         OnePair,
         TwoPair,
@@ -63,7 +93,24 @@ data class Hand(val cards: String, val bid: Int) : Comparable<Hand> {
                 }
 
             private fun sameLabelCounts(cards: String): List<Int> =
-                cards.groupingBy { it }.eachCount().values.sortedDescending().filterNot { it < 2 }
+                cards
+                    .groupingBy { it }
+                    .eachCount()
+                    .filterValues { it >= 2 }
+                    .values
+                    .sortedDescending()
         }
+    }
+
+    private class SecondOrderingRule(labelOrder: List<Char>) : Comparator<Hand> {
+
+        private val cardComparator = compareBy<Char> { labelOrder.indexOf(it) }
+
+        override fun compare(a: Hand, b: Hand) =
+            a.cards
+                .asSequence() // an unnecessary optimisation, or logical code execution
+                .zip(b.cards.asSequence())
+                .map { (a, b) -> cardComparator.compare(a, b) }
+                .firstOrNull { comparison -> comparison != 0 } ?: 0
     }
 }
