@@ -41,15 +41,22 @@ inline fun <reified T> Array<Array<T>>.deepCopy(): Array<Array<T>> {
 
 fun List<Int>.deltas() = this.zipWithNext { a, b -> b - a }
 
-
 open class Vector2D(var x: Int, var y: Int) {
     operator fun plus(v: Vector2D) = Vector2D(x + v.x, y + v.y)
+
     operator fun minus(v: Vector2D) = Vector2D(x - v.x, y - v.y)
+
     operator fun times(scalar: Int) = Vector2D(x * scalar, y * scalar)
+
     operator fun div(scalar: Int) = Vector2D(x / scalar, y / scalar)
+
     fun inRanges(xRange: IntRange, yRange: IntRange) = x in xRange && y in yRange
-    fun coerceIn(xRange: IntRange, yRange: IntRange) = Vector2D(x.coerceIn(xRange), y.coerceIn(yRange))
+
+    fun coerceIn(xRange: IntRange, yRange: IntRange) =
+        Vector2D(x.coerceIn(xRange), y.coerceIn(yRange))
+
     fun distance(v: Vector2D) = sqrt((x - v.x).toDouble().pow(2) + (y - v.y).toDouble().pow(2))
+
     fun manhattanDistance(v: Vector2D) = abs(x - v.x) + abs(y - v.y)
 
     fun rotate(degrees: Double): Vector2D {
@@ -63,10 +70,11 @@ open class Vector2D(var x: Int, var y: Int) {
         return Vector2D(nx.toInt(), ny.toInt())
     }
 
-    override fun equals(other: Any?) = when (other) {
-        is Vector2D -> x == other.x && y == other.y
-        else -> false
-    }
+    override fun equals(other: Any?) =
+        when (other) {
+            is Vector2D -> x == other.x && y == other.y
+            else -> false
+        }
 
     override fun hashCode() = (x.hashCode() * 31) + y.hashCode()
 
@@ -86,15 +94,22 @@ open class Vector2D(var x: Int, var y: Int) {
 
 typealias Point = Vector2D
 
-sealed class CompassPoints(x: Int, y: Int): Point(x, y) {
-    object North: CompassPoints(0, -1)
-    object NorthEast: CompassPoints(1, -1)
-    object East: CompassPoints(1, 0)
-    object SouthEast: CompassPoints(1, 1)
-    object South: CompassPoints(0, 1)
-    object SouthWest: CompassPoints(-1, 1)
-    object West: CompassPoints(-1, 0)
-    object NorthWest: CompassPoints(-1, -1)
+sealed class CompassPoints(x: Int, y: Int) : Point(x, y) {
+    object North : CompassPoints(0, -1)
+
+    object NorthEast : CompassPoints(1, -1)
+
+    object East : CompassPoints(1, 0)
+
+    object SouthEast : CompassPoints(1, 1)
+
+    object South : CompassPoints(0, 1)
+
+    object SouthWest : CompassPoints(-1, 1)
+
+    object West : CompassPoints(-1, 0)
+
+    object NorthWest : CompassPoints(-1, -1)
 }
 
 operator fun <E> List<List<E>>.get(point: Point): E = point.let { (x, y) -> this[y][x] }
@@ -149,11 +164,11 @@ fun List<MutableList<Char>>.fill(start: Point, target: Char, replacement: Char) 
 }
 
 fun <T> aStar(
-        start: T,
-        goal: (T) -> Boolean,
-        heuristic: (T) -> Double,
-        neighbors: (T) -> Iterable<T>,
-        weight: (current: T, neighbour: T) -> Double
+    start: T,
+    goal: (T) -> Boolean,
+    heuristic: (T) -> Double,
+    neighbors: (T) -> Iterable<T>,
+    weight: (current: T, neighbour: T) -> Double
 ): List<T>? {
 
     fun <T> reconstructPath(preceding: MutableMap<T, T>, current: T): List<T> {
@@ -176,7 +191,7 @@ fun <T> aStar(
     val preceding = mutableMapOf<T, T>()
 
     while (discovered.isNotEmpty()) {
-        val current = discovered.minByOrNull{ bestGuess.getValue(it) } ?: error("")
+        val current = discovered.minByOrNull { bestGuess.getValue(it) } ?: error("")
         if (goal(current)) {
             return reconstructPath(preceding, current)
         }

@@ -7,15 +7,16 @@ fun main() {
     fun part1(input: List<String>): Int {
         val heatLossMap = HeatLossMap(input)
         val goalBlock = Vector2D(140, 140)
-        val results = aStar<Crucible>(
+        val results =
+            aStar<Crucible>(
                 start = Crucible(Vector2D(0, 0), RIGHT, blocksTraveled = 0),
                 goal = { it.block == goalBlock },
                 heuristic = { it.block.distance(goalBlock) },
                 neighbors = { it.getNeighbours().filter { it.block in heatLossMap } },
                 weight = { _, n -> heatLossMap.getValue(n.block).toDouble() },
-        )
+            )
         heatLossMap.overlay(results?.drop(1)).println()
-        return results?.drop(1)?.sumOf { heatLossMap.getValue(it.block) } ?:0
+        return results?.drop(1)?.sumOf { heatLossMap.getValue(it.block) } ?: 0
     }
 
     fun part2(input: List<String>): Int {
@@ -30,9 +31,8 @@ fun main() {
 
 private class HeatLossMap(input: List<String>) {
 
-    val values = List(input.count()) { y ->
-        List(input[y].count()) { x -> input[x][y].digitToInt() }
-    }
+    val values =
+        List(input.count()) { y -> List(input[y].count()) { x -> input[x][y].digitToInt() } }
 
     override fun toString() = buildString {
         for (yIdx in values[0].indices) {
@@ -51,9 +51,9 @@ private class HeatLossMap(input: List<String>) {
 }
 
 private data class Crucible(
-        val block: Vector2D,
-        val direction: Vector2D,
-        val blocksTraveled: Int = 1
+    val block: Vector2D,
+    val direction: Vector2D,
+    val blocksTraveled: Int = 1
 ) {
     val canContinueForward = blocksTraveled < MAX_TRAVELED
     val canContinueUp = direction * -1 != UP && (direction != UP || canContinueForward)
@@ -61,51 +61,62 @@ private data class Crucible(
     val canContinueDown = direction * -1 != DOWN && (direction != DOWN || canContinueForward)
     val canContinueLeft = direction * -1 != LEFT && (direction != LEFT || canContinueForward)
 
-    fun getNeighbours() = buildSet<Crucible> {
-        if (canContinueForward) {
-            add(Crucible(
-                    block = block + direction,
-                    direction = direction,
-                    blocksTraveled = blocksTraveled + 1,
-            ))
-        }
-        val toLeft = direction.rotate(-90.0)
-        add(Crucible(
-                block = block + toLeft,
-                direction = toLeft,
-        ))
-        val toRight = direction.rotate(90.0)
-        add(Crucible(
-                block = block + toRight,
-                direction = toRight,
-        ))
-    }
-
-    override fun hashCode() = listOf(
-            block.hashCode(),
-//            direction.hashCode(),
-//            blocksTraveled.hashCode(),
-            run {
-                listOf(
-                        canContinueUp,
-                        canContinueRight,
-                        canContinueDown,
-                        canContinueLeft,
-                ).fold(0) { acc, b -> (acc shl 1) or if (b) 1 else 0 }
+    fun getNeighbours() =
+        buildSet<Crucible> {
+            if (canContinueForward) {
+                add(
+                    Crucible(
+                        block = block + direction,
+                        direction = direction,
+                        blocksTraveled = blocksTraveled + 1,
+                    )
+                )
             }
-    ).reduce { acc, hash -> (acc * 31) + hash }
+            val toLeft = direction.rotate(-90.0)
+            add(
+                Crucible(
+                    block = block + toLeft,
+                    direction = toLeft,
+                )
+            )
+            val toRight = direction.rotate(90.0)
+            add(
+                Crucible(
+                    block = block + toRight,
+                    direction = toRight,
+                )
+            )
+        }
 
-    override fun equals(other: Any?) = when (other) {
-        is Crucible ->
-            block == other.block
-//            && direction == other.direction
-//            && blocksTraveled == other.blocksTraveled
-            && canContinueUp == other.canContinueUp
-            && canContinueRight == other.canContinueRight
-            && canContinueDown == other.canContinueDown
-            && canContinueLeft == other.canContinueLeft
-        else -> false
-    }
+    override fun hashCode() =
+        listOf(
+                block.hashCode(),
+                //            direction.hashCode(),
+                //            blocksTraveled.hashCode(),
+                run {
+                    listOf(
+                            canContinueUp,
+                            canContinueRight,
+                            canContinueDown,
+                            canContinueLeft,
+                        )
+                        .fold(0) { acc, b -> (acc shl 1) or if (b) 1 else 0 }
+                }
+            )
+            .reduce { acc, hash -> (acc * 31) + hash }
+
+    override fun equals(other: Any?) =
+        when (other) {
+            is Crucible -> block == other.block
+                //            && direction == other.direction
+                //            && blocksTraveled == other.blocksTraveled
+                &&
+                    canContinueUp == other.canContinueUp &&
+                    canContinueRight == other.canContinueRight &&
+                    canContinueDown == other.canContinueDown &&
+                    canContinueLeft == other.canContinueLeft
+            else -> false
+        }
 
     companion object {
         const val MAX_TRAVELED = 3
@@ -117,13 +128,14 @@ private data class Crucible(
 }
 
 private fun HeatLossMap.overlay(results: List<Crucible>?) = buildString {
-    fun Vector2D.toChar() = when(this) {
-        UP -> '^'
-        RIGHT -> '>'
-        DOWN -> 'v'
-        LEFT -> '<'
-        else -> error("Encountered unexpected direction: $this")
-    }
+    fun Vector2D.toChar() =
+        when (this) {
+            UP -> '^'
+            RIGHT -> '>'
+            DOWN -> 'v'
+            LEFT -> '<'
+            else -> error("Encountered unexpected direction: $this")
+        }
 
     for (yIdx in values[0].indices) {
         for (xIdx in values.indices) {
@@ -138,12 +150,13 @@ private fun HeatLossMap.overlay(results: List<Crucible>?) = buildString {
 private fun allChecks(input: List<String>) {
     val heatLossMap = HeatLossMap(input)
     val goalBlock = Vector2D(12, 12)
-    val results = aStar<Crucible>(
+    val results =
+        aStar<Crucible>(
             start = Crucible(Vector2D(0, 0), RIGHT, blocksTraveled = 0),
             goal = { it.block == goalBlock },
             heuristic = { it.block.distance(goalBlock).toDouble() },
             neighbors = { it.getNeighbours().filter { it.block in heatLossMap } },
             weight = { _, n -> heatLossMap.getValue(n.block).toDouble() },
-    )
-    checkValue(102, results?.drop(1)?.sumOf { heatLossMap.getValue(it.block) } ?:0 )
+        )
+    checkValue(102, results?.drop(1)?.sumOf { heatLossMap.getValue(it.block) } ?: 0)
 }
