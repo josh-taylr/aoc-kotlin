@@ -27,12 +27,10 @@ fun String.toUIntList(): List<UInt> = this.trim().split("\\s+".toPattern()).map(
 
 fun String.toLongList(): List<Long> = this.trim().split("\\s+".toPattern()).map(String::toLong)
 
-fun CharSequence.asWrappingSequence(): Sequence<Char> = sequence {
-    var i = 0
-    do {
-        yield(this@asWrappingSequence[i])
-        i = (i + 1) % this@asWrappingSequence.count()
-    } while (true)
+fun CharSequence.wrappingSequence() = sequence {
+    while (true) {
+        yieldAll(asSequence())
+    }
 }
 
 inline fun <reified T> Array<Array<T>>.deepCopy(): Array<Array<T>> {
@@ -40,6 +38,10 @@ inline fun <reified T> Array<Array<T>>.deepCopy(): Array<Array<T>> {
 }
 
 fun List<Int>.deltas() = this.zipWithNext { a, b -> b - a }
+
+tailrec fun gcd(a: Long, b: Long): Long = if (b <= 0) a else gcd(b, a % b)
+
+fun lcm(a: Long, b: Long): Long = a * b / gcd(a, b)
 
 open class Vector2D(var x: Int, var y: Int) {
     operator fun plus(v: Vector2D) = Vector2D(x + v.x, y + v.y)
