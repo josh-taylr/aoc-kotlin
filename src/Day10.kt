@@ -1,113 +1,187 @@
 import Maze.Pipe.*
+import Maze.ScanState.Search
 import kotlin.math.nextUp
 import kotlin.math.roundToInt
 
 fun main() {
-    fun part1(input: List<String>): Int {
-        return Maze.parse(input).run { loopSize(start) }
-    }
+    fun part1(input: List<String>) = Maze.parse(input).maxDistance
 
-    fun part2(input: List<String>): Int {
-        return Int.MAX_VALUE
-    }
+    fun part2(input: List<String>) = Maze.parse(input).enclosed
 
     checkValue(4, part1(readInput("Day10_test")))
     checkValue(8, part1(readInput("Day10_test2")))
 
     val input = readInput("Day10")
     part1(input).println()
+    part2(input).println()
 }
 
-data class Maze(val field: List<List<Pipe>>, val start: Pair<Int, Int>) {
-    fun loopSize(start: Pair<Int, Int>): Int {
-        val visited = ArrayDeque<Pair<Int, Int>>(listOf(start))
-        val (row, col) = start
-        val new = neighbours(row, col).first()
+data class Maze(private val field: List<List<Pipe>>, private val start: Point) {
+
+    init {
+        mapLoop()
+        mapInside()
+    }
+
+    val maxDistance =
+        field
+            .flatten()
+            .maxOf { it.distanceFromStart ?: 0 }
+            .let { ((it).toFloat() / 2).nextUp().roundToInt() }
+
+    val enclosed = field.flatten().count { it.isInside }
+
+    private fun mapLoop() {
+        val visited = ArrayDeque(listOf(start))
+        start.let { (row, col) -> field[row][col].distanceFromStart = 0 }
+        val new = neighbours(start).first()
         visited.addLast(new)
+        var count = 0
         while (visited.lastOrNull() != start) {
-            val (row, col) = visited.lastOrNull() ?: start
-            val new = neighbours(row, col).filterNot { it in visited.takeLast(2) }.first()
-            visited.addLast(new)
-        }
-        return ((visited.count() - 1).toFloat() / 2).nextUp().roundToInt()
-    }
-
-    private fun neighbours(row: Int, col: Int): List<Pair<Int, Int>> {
-        return when (getPipe(row, col)) {
-            V -> listOf(row - 1 to col, row + 1 to col)
-            H -> listOf(row to col - 1, row to col + 1)
-            NE -> listOf(row - 1 to col, row to col + 1)
-            NW -> listOf(row - 1 to col, row to col - 1)
-            SW -> listOf(row + 1 to col, row to col - 1)
-            SE -> listOf(row + 1 to col, row to col + 1)
-            else -> emptyList()
+            val next = visited.lastOrNull() ?: start
+            val neighbours = neighbours(next).filterNot { it in visited.takeLast(2) }.first()
+            next.let { (row, col) -> field[row][col].distanceFromStart = ++count }
+            visited.addLast(neighbours)
         }
     }
 
-    private fun getPipe(row: Int, col: Int) =
-        field[row][col].takeUnless(Pipe::isStart) ?: validPipes(row, col).first()
-
-    private fun validPipes(row: Int, col: Int): List<Pipe> {
-        return buildList {
-            if (hasUp(row, col) && hasDown(row, col)) add(V)
-            if (hasLeft(row, col) && hasRight(row, col)) add(H)
-            if (hasUp(row, col) && hasRight(row, col)) add(NE)
-            if (hasUp(row, col) && hasLeft(row, col)) add(NW)
-            if (hasDown(row, col) && hasLeft(row, col)) add(SW)
-            if (hasDown(row, col) && hasRight(row, col)) add(SE)
+    private fun neighbours(point: Point): List<Point> {
+        val (row, col) = point
+        return when (field[row][col]) {
+            is Vertical -> listOf(Point(row - 1, col), Point(row + 1, col))
+            is Horizontal -> listOf(Point(row, col - 1), Point(row, col + 1))
+            is NorthToEast -> listOf(Point(row - 1, col), Point(row, col + 1))
+            is NorthToWest -> listOf(Point(row - 1, col), Point(row, col - 1))
+            is SouthToWest -> listOf(Point(row + 1, col), Point(row, col - 1))
+            is SouthToEast -> listOf(Point(row + 1, col), Point(row, col + 1))
+            is Ground -> emptyList()
         }
     }
 
-    private fun hasUp(row: Int, col: Int) = row > 0 && field[row - 1][col] in listOf(V, SW, SE)
+    private fun mapInside() {
+        field.forEach { row ->
+            var state: ScanState = Search()
+            row.forEach { pipe ->
+                if (pipe.distanceFromStart != null) {
+                    state += pipe
+                } else {
+                    pipe.isInside = state.inside
+                }
+            }
+        }
+    }
 
-    private fun hasRight(row: Int, col: Int) =
-        col < field[row].lastIndex && field[row][col + 1] in listOf(H, NW, SW)
+    private sealed class ScanState(val inside: Boolean) {
 
-    private fun hasDown(row: Int, col: Int) =
-        row < field.lastIndex && field[row + 1][col] in listOf(V, NW, NE)
+        abstract operator fun plus(pipe: Pipe): ScanState
 
-    private fun hasLeft(row: Int, col: Int) = col > 0 && field[row][col - 1] in listOf(H, NE, SE)
+        class Search(inside: Boolean = false) : ScanState(inside) {
+            override fun plus(pipe: Pipe) =
+                when (pipe) {
+                    is Vertical -> Search(!inside)
+                    is WestCorner -> Curve(pipe, inside)
+                    else -> this
+                }
+        }
+
+        class Curve(private val start: WestCorner, inside: Boolean) : ScanState(inside) {
+            override fun plus(pipe: Pipe) =
+                when (start) {
+                    is NorthToEast ->
+                        when (pipe) {
+                            is NorthToWest -> Search(inside)
+                            is SouthToWest -> Search(!inside)
+                            is Horizontal -> this
+                            else -> error("Invalid pipe: $pipe")
+                        }
+                    is SouthToEast ->
+                        when (pipe) {
+                            is NorthToWest -> Search(!inside)
+                            is SouthToWest -> Search(inside)
+                            is Horizontal -> this
+                            else -> error("Invalid pipe: $pipe")
+                        }
+                }
+        }
+    }
 
     companion object {
         fun parse(input: List<String>): Maze {
-            var start: Pair<Int, Int>? = null
+            var start: Point? = null
             val field: List<List<Pipe>> =
-                List(input.count()) { i ->
-                    List(input[i].count()) { j ->
-                        val pipe = Pipe.parse(input[i][j])
-                        if (pipe == S) start = i to j
-                        pipe
+                List(input.count()) { row ->
+                    List(input[row].count()) { col ->
+                        val c = input[row][col]
+                        if (c == 'S') {
+                            start = Point(row, col)
+                            validPipe(input, row, col)
+                        } else {
+                            Pipe.parse(c)
+                        }
                     }
                 }
-            return Maze(field, start!!)
+
+            return Maze(field, requireNotNull(start) { "Input without start symbol." })
         }
+
+        private fun validPipe(input: List<String>, row: Int, col: Int) =
+            when {
+                hasUp(input, row, col) && hasDown(input, row, col) -> Vertical()
+                hasLeft(input, row, col) && hasRight(input, row, col) -> Horizontal()
+                hasUp(input, row, col) && hasRight(input, row, col) -> NorthToEast()
+                hasUp(input, row, col) && hasLeft(input, row, col) -> NorthToWest()
+                hasDown(input, row, col) && hasLeft(input, row, col) -> SouthToWest()
+                hasDown(input, row, col) && hasRight(input, row, col) -> SouthToEast()
+                else -> error("Invalid pipe at $row, $col")
+            }
+
+        private fun hasUp(field: List<String>, row: Int, col: Int) =
+            row > 0 && field[row - 1][col] in setOf('|', '7', 'F')
+
+        private fun hasRight(field: List<String>, row: Int, col: Int) =
+            col < field[row].lastIndex && field[row][col + 1] in setOf('-', '7', 'J')
+
+        private fun hasDown(field: List<String>, row: Int, col: Int) =
+            row < field.lastIndex && field[row + 1][col] in setOf('|', 'L', 'J')
+
+        private fun hasLeft(field: List<String>, row: Int, col: Int) =
+            col > 0 && field[row][col - 1] in setOf('-', 'L', 'F')
     }
 
-    enum class Pipe {
-        V,
-        H,
-        NE,
-        NW,
-        SW,
-        SE,
-        G,
-        S;
+    sealed class Pipe {
+
+        var isInside: Boolean = false
+
+        var distanceFromStart: Int? = null
+
+        sealed interface WestCorner
+
+        class Vertical : Pipe()
+
+        class Horizontal : Pipe()
+
+        class NorthToEast : Pipe(), WestCorner
+
+        class NorthToWest : Pipe()
+
+        class SouthToWest : Pipe()
+
+        class SouthToEast : Pipe(), WestCorner
+
+        class Ground : Pipe()
 
         companion object {
             fun parse(c: Char): Pipe =
                 when (c) {
-                    '|' -> V
-                    '-' -> H
-                    'L' -> NE
-                    'J' -> NW
-                    '7' -> SW
-                    'F' -> SE
-                    '.' -> G
-                    'S' -> S
+                    '|' -> Vertical()
+                    '-' -> Horizontal()
+                    'L' -> NorthToEast()
+                    'J' -> NorthToWest()
+                    '7' -> SouthToWest()
+                    'F' -> SouthToEast()
+                    '.' -> Ground()
                     else -> error("Invalid Pipe character: '$c'")
                 }
-
-            fun isStart(it: Pipe) = it == S
         }
     }
 }
