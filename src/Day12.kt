@@ -5,13 +5,14 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
 
 fun main() {
-    fun part1(input: List<String>): Int =
+    fun part1(input: List<String>): Long =
             input.map(String::toRecords).sumOf { (damaged, criteria) ->
                 damaged.countPossibleArrangements(criteria)
             }
 
-    fun part2(input: List<String>): Int = runBlocking {
-        input.map { it.toRecords().expand(times = 4) }
+    fun part2(input: List<String>): Long = runBlocking {
+        input.map { it.toRecords()
+                .expand(times = 5) }
                 .chunked(32)
                 .map { chunked ->
                     async(Dispatchers.IO) {
@@ -28,7 +29,7 @@ fun main() {
 
     val input = readInput("Day12")
     part1(input).println()
-//    part2(input).println()
+    part2(input).println()
 }
 
 private fun String.toRecords(): Pair<String, List<Int>> {
@@ -44,39 +45,48 @@ private fun Pair<String, List<Int>>.expand(times: Int): Pair<String, List<Int>> 
     return expandedRecord to expandedCriteria
 }
 
-private const val ImpossibleRecord = 0
-private const val FixedRecord = 1
+private const val ImpossibleRecord = 0L
+private const val FixedRecord = 1L
+private val cache = mutableMapOf<String, Long>()
 
-private fun String.countPossibleArrangements(criteria: List<Int>): Int =
-        findStart(
-                record = toCharArray(),
-                recordStart = 0,
-                criteria = criteria.toIntArray(),
-                criteriaStart = 0
-        )
+private fun CharSequence.countPossibleArrangements(criteria: List<Int>): Long {
+    val compressed = this.replace("\\.+".toRegex(), ".")
+    return findStart(
+            record = compressed.toCharArray(),
+            recordStart = 0,
+            criteria = criteria.toIntArray(),
+            criteriaStart = 0
+    )
+}
 
 private fun findStart(
         record: CharArray,
         recordStart: Int,
         criteria: IntArray,
         criteriaStart: Int
-)= sum(
-        when (record.getOrNull(recordStart)) {
+): Long {
+    val key = "${record.concatToString(startIndex = recordStart)} ${criteria.filter { it > 0 }.joinToString(",") }"
+    return cache.getOrPut(key) {
+        val countWithBroken = when (record.getOrNull(recordStart)) {
             '#', '?' -> assumeBroken(criteria, criteriaStart, record, recordStart)
             else -> 0
-        },
-        when (record.getOrNull(recordStart)) {
+        }
+        val countWithOperational = when (record.getOrNull(recordStart)) {
             '.', '?' -> assumeOperational(record, recordStart, criteria, criteriaStart)
             else -> 0
         }
-)
+
+        if (countWithBroken > Long.MAX_VALUE - countWithOperational) error("Integer overflow")
+        countWithBroken + countWithOperational
+    }
+}
 
 private fun consumeGroup(
         record: CharArray,
         recordStart: Int,
         criteria: IntArray,
         criteriaStart: Int
-): Int = when (record.getOrNull(recordStart)) {
+): Long = when (record.getOrNull(recordStart)) {
     '#', '?' -> assumeBroken(criteria, criteriaStart, record, recordStart)
     null -> endGroup(record, recordStart, criteria, criteriaStart)
     else -> ImpossibleRecord
@@ -87,7 +97,7 @@ private fun endGroup(
         recordStart: Int,
         criteria: IntArray,
         criteriaStart: Int
-): Int = when (record.getOrNull(recordStart)) {
+): Long = when (record.getOrNull(recordStart)) {
     '.', '?' -> assumeOperational(record, recordStart, criteria, criteriaStart)
     null -> if (criteria.last() > 0) ImpossibleRecord else FixedRecord
     else -> ImpossibleRecord
@@ -98,14 +108,14 @@ private fun findEnd(
         recordStart: Int,
         criteria: IntArray,
         criteriaStart: Int
-): Int = when (record.getOrNull(recordStart)) {
+): Long = when (record.getOrNull(recordStart)) {
     '.', '?' -> assumeOperational(record, recordStart, criteria, criteriaStart)
     null -> FixedRecord
     else -> ImpossibleRecord
 }
 
-private fun assumeOperational(record: CharArray, recordStart: Int, criteria: IntArray, criteriaStart: Int): Int {
-    var res: Int
+private fun assumeOperational(record: CharArray, recordStart: Int, criteria: IntArray, criteriaStart: Int): Long {
+    var res: Long
     record[recordStart] = record[recordStart].also {
         record[recordStart] = '.'
         res = if (criteria.last() > 0)
@@ -116,9 +126,9 @@ private fun assumeOperational(record: CharArray, recordStart: Int, criteria: Int
     return res
 }
 
-private fun assumeBroken(criteria: IntArray, criteriaStart: Int, record: CharArray, recordStart: Int): Int =
+private fun assumeBroken(criteria: IntArray, criteriaStart: Int, record: CharArray, recordStart: Int): Long =
         criteria.runWithDecrement(criteriaStart) { decrementedCriteria ->
-            var res: Int
+            var res: Long
             record[recordStart] = record[recordStart].also {
                 record[recordStart] = '#'
                 res = if (decrementedCriteria[criteriaStart] > 0)
