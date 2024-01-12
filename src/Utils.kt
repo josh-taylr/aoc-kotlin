@@ -128,6 +128,17 @@ val <E> List<List<E>>.height: Int
 val <E> List<List<E>>.width: Int
     get() = this.firstOrNull()?.size ?: 0
 
+
+fun <T> List<List<T>>.transposed(): List<List<T>> {
+    if (this.isEmpty()) return emptyList()
+
+    val width = this.first().size
+    if (this.any { it.size != width }) throw IllegalArgumentException("All nested lists must have the same size")
+
+    return List(width) { col ->
+        List(size) { row -> this[row][col] }
+    }
+}
 fun CharSequence.fill(start: Point, target: Char, replacement: Char): String {
     val grid = lineSequence().map { it.toMutableList() }.toList()
     grid.fill(start, target, replacement)
