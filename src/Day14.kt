@@ -1,4 +1,9 @@
-import Platform.Space.*
+import org.jetbrains.kotlinx.multik.api.mk
+import org.jetbrains.kotlinx.multik.api.ndarray
+import org.jetbrains.kotlinx.multik.ndarray.data.*
+import org.jetbrains.kotlinx.multik.ndarray.operations.toListD2
+
+private const val CycleCount = 1_000_000_000L
 
 fun main() {
     fun part1(input: List<String>): Int {
@@ -8,100 +13,117 @@ fun main() {
     }
 
     fun part2(input: List<String>): Int {
-        return Int.MAX_VALUE
+        val platform = Platform.parse(input)
+        val seen = mutableMapOf<Platform, Long>()
+        var i = 0L
+
+        while (i < CycleCount) {
+            if (platform in seen) {
+                val cycleStart = seen[platform]!!
+                val cycleLength = i - cycleStart
+                val remainingSteps = (CycleCount - cycleStart) % cycleLength
+                for (j in 0 until remainingSteps) {
+                    platform.cycle()
+                }
+                return platform.calcLoad()
+            }
+
+            seen[platform] = i
+            platform.cycle()
+            i++
+        }
+
+        return platform.calcLoad()
     }
 
     allChecks(readInput("Day14_test"))
 
     val input = readInput("Day14")
     part1(input).println()
+    part2(input).println()
 }
 
-class Platform(val spaces: Array<Array<Space>>) {
+class Platform(val spaces: D2Array<Int>) {
 
     fun moveLever(direction: Tilt) {
-        if (direction == Tilt.North) {
-            spaces.tiltNorth()
+        when (direction) {
+            Tilt.North -> {
+                spaces.rotate90()
+                do {
+                    val didShift = rollRocks(spaces)
+                } while (didShift)
+                spaces.rotate270()
+            }
+            Tilt.East -> {
+                do {
+                    val didShift = rollRocks(spaces)
+                } while (didShift)
+            }
+            Tilt.South -> {
+                spaces.rotate270()
+                do {
+                    val didShift = rollRocks(spaces)
+                } while (didShift)
+                spaces.rotate90()
+            }
+            Tilt.West -> {
+                spaces.rotate180()
+                do {
+                    val didShift = rollRocks(spaces)
+                } while (didShift)
+                spaces.rotate180()
+
+            }
+        }
+    }
+
+    fun cycle() {
+        repeat(4) {
+            spaces.rotate90()
+            do {
+                val didShift = rollRocks(spaces)
+            } while (didShift)
         }
     }
 
     fun calcLoad(): Int =
-        spaces
-            .mapIndexed { idx, row ->
+        spaces.toListD2().let { spaces ->
+            spaces.mapIndexed { idx, row ->
                 val loadPerRoundSpace = spaces.size - idx
                 val roundSpaces = row.count { space -> space == Round }
                 (roundSpaces * loadPerRoundSpace)
             }
             .sum()
+        }
 
     override fun toString(): String {
-        return spaces.joinToString(System.lineSeparator()) { row ->
-            row.joinToString("") { space -> "${space.char}" }
+        return spaces.toListD2().joinToString(System.lineSeparator()) { row ->
+            row.joinToString("") { space -> "${toChar(space)}" }
         }
     }
 
     override fun equals(other: Any?) =
         when (other) {
-            is Platform -> this.spaces.contentDeepEquals(other.spaces)
+            is Platform -> this.spaces == other.spaces
             else -> false
         }
 
     override fun hashCode(): Int {
-        return spaces.contentDeepHashCode()
+        return spaces.hashCode()
     }
 
-    private fun Array<Array<Space>>.tiltNorth() {
-        for (col in first().indices) {
-            var start = 0
-            for (row in indices) {
-                if (this[row][col] == Cube) {
-                    sort(col, start, row)
-                    start = row + 1
+    private fun rollRocks(grid: D2Array<Int>): Boolean {
+        var didShift = false
+        for (row in 0..< grid.shape[0]) {
+            for (col in 0..<(grid.shape[1] -1)) {
+                if (grid[row, col] == Round && grid[row, col + 1] == Empty) {
+                    grid[row, col + 1] = Round
+                    grid[row, col] = Empty
+                    didShift = true
                 }
             }
-            sort(col, start, size)
         }
-    }
-
-    private fun Array<Array<Space>>.sort(col: Int, start: Int, endExclusive: Int) {
-        if (endExclusive - start <= 1) return
-        val subColumn = Array(endExclusive - start) { row -> this[start + row][col] }
-        subColumn.sort()
-        subColumn.forEachIndexed { row, _ -> this[start + row][col] = subColumn[row] }
-    }
-
-    sealed class Space(val char: Char) : Comparable<Space> {
-
-        data object Round : Space('O')
-
-        data object Empty : Space('.')
-
-        data object Cube : Space('#')
-
-        override fun compareTo(other: Space) =
-            when {
-                (this is Cube || other is Cube) -> 0
-                this is Round ->
-                    when (other) {
-                        is Round -> 0
-                        else -> -1
-                    }
-                else ->
-                    when (other) {
-                        is Round -> 1
-                        else -> 0
-                    }
-            }
-
-        companion object {
-            fun toSpace(c: Char) =
-                when (c) {
-                    'O' -> Round
-                    '.' -> Empty
-                    '#' -> Cube
-                    else -> error("Unexpected char: $c")
-                }
-        }
+        return didShift;
     }
 
     enum class Tilt {
@@ -113,9 +135,27 @@ class Platform(val spaces: Array<Array<Space>>) {
 
     companion object {
 
+        private const val Empty = 0
+        private const val Round = 1
+        private const val Cube = 2
+
         fun parse(input: List<String>): Platform {
-            val matrix = input.map { str -> str.map(Space::toSpace).toTypedArray() }.toTypedArray()
-            return Platform(matrix)
+            val matrix = input.map { str -> str.map(::toSpace) }
+            return Platform(mk.ndarray(matrix))
+        }
+
+        private fun toSpace(c: Char) = when (c) {
+            'O' -> Round
+            '.' -> Empty
+            '#' -> Cube
+            else -> error("Unexpected char: $c")
+        }
+
+        private fun toChar(space: Int) = when (space) {
+            Round -> 'O'
+            Empty -> '.'
+            Cube -> '#'
+            else -> error("Unexpected space: $space")
         }
     }
 }
@@ -157,4 +197,40 @@ private fun allChecks(testInput: List<String>) {
         platform.toString()
     )
     checkValue(136, platform.calcLoad())
+}
+
+private fun D2Array<Int>.rotate90() {
+    val n = shape[0]
+    val m = shape[1]
+    val copy = copy()
+
+    for (i in 0 until n) {
+        for (j in 0 until m) {
+            this[j, n - i - 1] = copy[i, j]
+        }
+    }
+}
+
+private fun D2Array<Int>.rotate180() {
+val n = shape[0]
+    val m = shape[1]
+    val copy = copy()
+
+    for (i in 0 until n) {
+        for (j in 0 until m) {
+            this[n - i - 1, m - j - 1] = copy[i, j]
+        }
+    }
+}
+
+private fun D2Array<Int>.rotate270() {
+    val n = shape[0]
+    val m = shape[1]
+    val copy = copy()
+
+    for (i in 0 until n) {
+        for (j in 0 until m) {
+            this[n - i - 1, j] = copy[j, i]
+        }
+    }
 }
