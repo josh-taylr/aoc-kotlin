@@ -1,11 +1,15 @@
-fun main() {
-    fun part1(input: List<String>): Int {
+package aoc2023
+
+import AOCDay
+
+class Day01 : AOCDay(year = "2023", day = "1") {
+    override fun part1(input: List<String>): Int {
         return input.sumOf { line ->
             line.filter(Char::isDigit).let { "${it.first()}${it.last()}" }.toInt()
         }
     }
 
-    fun part2(input: List<String>): Int {
+    override fun part2(input: List<String>): Int {
         val digits =
             mapOf(
                 "one" to 1,
@@ -38,11 +42,4 @@ fun main() {
             "$first$last".toInt()
         }
     }
-
-    check(part1(readInput("Day01_test")) == 142)
-    check(part2(readInput("Day01_test2")) == 281)
-
-    val input = readInput("Day01")
-    part1(input).println()
-    part2(input).println()
 }

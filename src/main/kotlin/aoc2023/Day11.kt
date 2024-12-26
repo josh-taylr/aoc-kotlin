@@ -1,23 +1,21 @@
+package aoc2023
+
+import AOCDay
+import Point
 import kotlin.math.max
 import kotlin.math.min
 
-fun main() {
-    fun part1(input: List<String>): Long {
+class Day11 : AOCDay(year = "2023", day = "11")  {
+    override fun part1(input: List<String>): Long {
         val universe = Universe.parse(input)
         return universe.sumOfShortestPaths()
     }
 
-    fun part2(input: List<String>): Long {
+    override fun part2(input: List<String>): Long {
         val universe = Universe.parse(input)
         universe.expansionValue = 1_000_000
         return universe.sumOfShortestPaths()
     }
-
-    checkValue(374, part1(readInput("Day11_test")))
-
-    val input = readInput("Day11")
-    part1(input).println()
-    part2(input).println()
 }
 
 private class Universe(

@@ -1,11 +1,18 @@
-fun main() {
-    fun part1(input: List<String>): Int {
+package aoc2023
+
+import AOCDay
+import wrappingSequence
+import toUIntList
+import lcm
+
+class Day08 : AOCDay(year = "2023", day = "8")  {
+    override fun part1(input: List<String>): Int {
         val instructions = input.first()
         val nodes = input.drop(2).map(LRNode::parse).associateBy { it.name }
         return countSteps(instructions, nodes, "AAA") { it == "ZZZ" }
     }
 
-    fun part2(input: List<String>): Long {
+    override fun part2(input: List<String>): Long {
         val instructions = input.first()
         val nodeMap = input.drop(2).map(LRNode::parse).associateBy { it.name }
         val startKeys = nodeMap.filterKeys { it.endsWith('A') }.map { it.key }
@@ -15,13 +22,6 @@ fun main() {
             }
         return steps.reduce { lcm, n -> lcm(lcm, n) }
     }
-
-    checkValue(2, part1(readInput("Day08_test")))
-    checkValue(6, part2(readInput("Day08_test2")))
-
-    val input = readInput("Day08")
-    part1(input).println()
-    part2(input).println()
 }
 
 private inline fun countSteps(

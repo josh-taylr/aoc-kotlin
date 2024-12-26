@@ -1,12 +1,18 @@
 plugins {
     kotlin("jvm") version "1.9.22"
     id("com.ncorti.ktfmt.gradle") version "0.15.1"
+    application
 }
 
 sourceSets {
     main {
-        kotlin.srcDir("src")
+        kotlin.srcDir("src/main/kotlin")
+        resources.srcDir("src/main/resources")
     }
+}
+
+application {
+    mainClass.set("MainKt")
 }
 
 ktfmt {
@@ -22,5 +28,21 @@ dependencies {
 tasks {
     wrapper {
         gradleVersion = "8.7"
+    }
+
+    register("day01", JavaExec::class) {
+        group = "advent of code"
+        description = "Run Day01.kt solution"
+        mainClass.set("aoc2023.Day01Kt")
+        classpath = sourceSets["main"].runtimeClasspath
+    }
+
+    named<JavaExec>("run") {
+        project.findProperty("day")?.let { day ->
+            environment("AOC_DAY", day)
+        }
+        project.findProperty("year")?.let { year ->
+            environment("AOC_YEAR", year)
+        }
     }
 }

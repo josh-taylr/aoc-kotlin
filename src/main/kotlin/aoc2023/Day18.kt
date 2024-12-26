@@ -1,16 +1,17 @@
+package aoc2023
+
+import AOCDay
+import Vector2D
+import Point
+import fill
 import CompassPoints.*
 
-fun main() {
-    fun part1(input: List<String>) = DigPlan(input).calcVolume()
+class Day18 : AOCDay(year = "2023", day = "18")  {
+    override fun part1(input: List<String>) = DigPlan(input).calcVolume()
 
-    fun part2(input: List<String>): Int {
+    override fun part2(input: List<String>): Int {
         return Int.MAX_VALUE
     }
-
-    checkValue(62, part1(readInput("Day18_test")))
-
-    val input = readInput("Day18")
-    part1(input).println()
 }
 
 private class DigPlan(input: List<String>) {
@@ -27,7 +28,7 @@ private class DigPlan(input: List<String>) {
                     while (loc != next) {
                         loc += dir
                         val e = getOrPut(loc.y) { mutableListOf() }
-                        e.addLast(loc.x)
+                        e.add(loc.x)
                     }
                     loc = next
                 }

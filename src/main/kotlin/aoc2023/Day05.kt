@@ -1,10 +1,15 @@
+package aoc2023
+
+import AOCDay
+import toUIntList
+
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
 
-fun main() {
-    fun part1(input: List<String>): UInt {
+class Day05 : AOCDay(year = "2023", day = "5")  {
+    override fun part1(input: List<String>): UInt {
         val seedsInput = input.first()
         val mapsInput = input.drop(1)
 
@@ -31,7 +36,7 @@ fun main() {
         }
     }
 
-    fun part2(input: List<String>): UInt = runBlocking {
+    override fun part2(input: List<String>): UInt = runBlocking {
         val seedsInput = input.first()
         val mapsInput = input.drop(1)
 
@@ -68,13 +73,6 @@ fun main() {
             .awaitAll()
             .min()
     }
-
-    checkValue(35U, part1(readInput("Day05_test")))
-    checkValue(46U, part2(readInput("Day05_test")))
-
-    val input = readInput("Day05")
-    part1(input).println()
-    part2(input).println()
 }
 
 class SeedMapping {

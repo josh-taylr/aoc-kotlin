@@ -1,15 +1,18 @@
+package aoc2023
+
+import AOCDay
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
 
-fun main() {
-    fun part1(input: List<String>): Long =
+class Day12 : AOCDay(year = "2023", day = "12")  {
+    override fun part1(input: List<String>): Long =
         input.map(String::toRecords).sumOf { (damaged, criteria) ->
             damaged.countPossibleArrangements(criteria)
         }
 
-    fun part2(input: List<String>): Long = runBlocking {
+    override fun part2(input: List<String>): Long = runBlocking {
         input
             .map { it.toRecords().expand(times = 5) }
             .chunked(32)
@@ -23,12 +26,6 @@ fun main() {
             .awaitAll()
             .sum()
     }
-
-    checkValue(21, part1(readInput("Day12_test")))
-
-    val input = readInput("Day12")
-    part1(input).println()
-    part2(input).println()
 }
 
 private fun String.toRecords(): Pair<String, List<Int>> {

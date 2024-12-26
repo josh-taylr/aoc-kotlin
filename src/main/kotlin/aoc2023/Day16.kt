@@ -1,5 +1,9 @@
-fun main() {
-    fun part1(input: List<String>): Int {
+package aoc2023
+
+import AOCDay
+
+class Day16 : AOCDay(year = "2023", day = "16")  {
+    override fun part1(input: List<String>): Int {
         val contraption = Contraption(input)
         while (contraption.hasActiveBeams) {
             contraption.moveForward()
@@ -7,13 +11,9 @@ fun main() {
         return contraption.countEnergised()
     }
 
-    fun part2(input: List<String>): Int {
+    override fun part2(input: List<String>): Int {
         return Int.MAX_VALUE
     }
-
-    allChecks(readInput("Day16_test"))
-
-    part1(readInput("Day16")).println()
 }
 
 private class Contraption(
@@ -218,80 +218,4 @@ private class Contraption(
         Hot,
         Cold
     }
-}
-
-private fun allChecks(testInput: List<String>) {
-    val contraption =
-        Contraption(
-            input =
-                """
-            ...-.
-            .-\..
-            /..|.
-            |.|..
-            \-/..
-            """
-                    .trimIndent()
-                    .split('\n'),
-            startRow = 1,
-            startCol = -1
-        )
-    repeat(19) { contraption.moveForward() }
-    checkValue(
-        """
-            <<<->
-            >-\^.
-            />2|.
-            |.|v.
-            \-/v.
-            """
-            .trimIndent(),
-        contraption.toString()
-    )
-    checkValue(false, contraption.hasActiveBeams)
-    checkValue(
-        """
-            #####
-            ####.
-            ####.
-            #.##.
-            ####."""
-            .trimIndent(),
-        contraption.heapMap()
-    )
-    val exampleContraption = Contraption(testInput)
-    while (exampleContraption.hasActiveBeams) exampleContraption.moveForward()
-    checkValue(
-        """
-            >|<<<\....
-            |v-.\^....
-            .v...|->>>
-            .v...v^.|.
-            .v...v^...
-            .v...v^..\
-            .v../2\\..
-            <->-/vv|..
-            .|<<<2-|.\
-            .v//.|.v..
-            """
-            .trimIndent(),
-        exampleContraption.toString()
-    )
-    checkValue(
-        """
-            ######....
-            .#...#....
-            .#...#####
-            .#...##...
-            .#...##...
-            .#...##...
-            .#..####..
-            ########..
-            .#######..
-            .#...#.#..
-            """
-            .trimIndent(),
-        exampleContraption.heapMap()
-    )
-    checkValue(46, exampleContraption.countEnergised())
 }

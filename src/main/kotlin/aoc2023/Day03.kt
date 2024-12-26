@@ -1,5 +1,9 @@
-fun main() {
-    fun part1(input: List<String>): Int {
+package aoc2023
+
+import AOCDay
+
+class Day03 : AOCDay(year = "2023", day = "3")  {
+    override fun part1(input: List<String>): Int {
         fun hasNeighbouringSymbol(str: String, range: IntRange): Boolean {
             if (str.isEmpty()) return false
             val safeRange =
@@ -29,7 +33,7 @@ fun main() {
         return partNumbers.sum()
     }
 
-    fun part2(input: List<String>): Int {
+    override fun part2(input: List<String>): Int {
         val gearRegex = "\\*".toRegex()
         fun findGears(str: String): List<Int> =
             gearRegex.findAll(str).map { match -> match.range.first }.toList()
@@ -74,11 +78,4 @@ fun main() {
         val ratios = gears.map { (partA, partB) -> gearRatio(partA, partB) }
         return ratios.sum()
     }
-
-    check(part1(readInput("Day03_test")) == 4361)
-    check(part2(readInput("Day03_test2")) == 467835)
-
-    val input = readInput("Day03")
-    part1(input).println()
-    part2(input).println()
 }

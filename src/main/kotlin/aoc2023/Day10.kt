@@ -1,19 +1,14 @@
-import Maze.Pipe.*
-import Maze.ScanState.Search
+package aoc2023
+
+import AOCDay
+import Point
 import kotlin.math.nextUp
 import kotlin.math.roundToInt
 
-fun main() {
-    fun part1(input: List<String>) = Maze.parse(input).maxDistance
+class Day10 : AOCDay(year = "2023", day = "10")  {
+    override fun part1(input: List<String>) = Maze.parse(input).maxDistance
 
-    fun part2(input: List<String>) = Maze.parse(input).enclosed
-
-    checkValue(4, part1(readInput("Day10_test")))
-    checkValue(8, part1(readInput("Day10_test2")))
-
-    val input = readInput("Day10")
-    part1(input).println()
-    part2(input).println()
+    override fun part2(input: List<String>) = Maze.parse(input).enclosed
 }
 
 data class Maze(private val field: List<List<Pipe>>, private val start: Point) {
@@ -48,19 +43,19 @@ data class Maze(private val field: List<List<Pipe>>, private val start: Point) {
     private fun neighbours(point: Point): List<Point> {
         val (row, col) = point
         return when (field[row][col]) {
-            is Vertical -> listOf(Point(row - 1, col), Point(row + 1, col))
-            is Horizontal -> listOf(Point(row, col - 1), Point(row, col + 1))
-            is NorthToEast -> listOf(Point(row - 1, col), Point(row, col + 1))
-            is NorthToWest -> listOf(Point(row - 1, col), Point(row, col - 1))
-            is SouthToWest -> listOf(Point(row + 1, col), Point(row, col - 1))
-            is SouthToEast -> listOf(Point(row + 1, col), Point(row, col + 1))
-            is Ground -> emptyList()
+            is Pipe.Vertical -> listOf(Point(row - 1, col), Point(row + 1, col))
+            is Pipe.Horizontal -> listOf(Point(row, col - 1), Point(row, col + 1))
+            is Pipe.NorthToEast -> listOf(Point(row - 1, col), Point(row, col + 1))
+            is Pipe.NorthToWest -> listOf(Point(row - 1, col), Point(row, col - 1))
+            is Pipe.SouthToWest -> listOf(Point(row + 1, col), Point(row, col - 1))
+            is Pipe.SouthToEast -> listOf(Point(row + 1, col), Point(row, col + 1))
+            is Pipe.Ground -> emptyList()
         }
     }
 
     private fun mapInside() {
         field.forEach { row ->
-            var state: ScanState = Search()
+            var state: ScanState = ScanState.Search()
             row.forEach { pipe ->
                 if (pipe.distanceFromStart != null) {
                     state += pipe
@@ -78,27 +73,27 @@ data class Maze(private val field: List<List<Pipe>>, private val start: Point) {
         class Search(inside: Boolean = false) : ScanState(inside) {
             override fun plus(pipe: Pipe) =
                 when (pipe) {
-                    is Vertical -> Search(!inside)
-                    is WestCorner -> Curve(pipe, inside)
+                    is Pipe.Vertical -> Search(!inside)
+                    is Pipe.WestCorner -> Curve(pipe, inside)
                     else -> this
                 }
         }
 
-        class Curve(private val start: WestCorner, inside: Boolean) : ScanState(inside) {
+        class Curve(private val start: Pipe.WestCorner, inside: Boolean) : ScanState(inside) {
             override fun plus(pipe: Pipe) =
                 when (start) {
-                    is NorthToEast ->
+                    is Pipe.NorthToEast ->
                         when (pipe) {
-                            is NorthToWest -> Search(inside)
-                            is SouthToWest -> Search(!inside)
-                            is Horizontal -> this
+                            is Pipe.NorthToWest -> Search(inside)
+                            is Pipe.SouthToWest -> Search(!inside)
+                            is Pipe.Horizontal -> this
                             else -> error("Invalid pipe: $pipe")
                         }
-                    is SouthToEast ->
+                    is Pipe.SouthToEast ->
                         when (pipe) {
-                            is NorthToWest -> Search(!inside)
-                            is SouthToWest -> Search(inside)
-                            is Horizontal -> this
+                            is Pipe.NorthToWest -> Search(!inside)
+                            is Pipe.SouthToWest -> Search(inside)
+                            is Pipe.Horizontal -> this
                             else -> error("Invalid pipe: $pipe")
                         }
                 }
@@ -126,12 +121,12 @@ data class Maze(private val field: List<List<Pipe>>, private val start: Point) {
 
         private fun validPipe(input: List<String>, row: Int, col: Int) =
             when {
-                hasUp(input, row, col) && hasDown(input, row, col) -> Vertical()
-                hasLeft(input, row, col) && hasRight(input, row, col) -> Horizontal()
-                hasUp(input, row, col) && hasRight(input, row, col) -> NorthToEast()
-                hasUp(input, row, col) && hasLeft(input, row, col) -> NorthToWest()
-                hasDown(input, row, col) && hasLeft(input, row, col) -> SouthToWest()
-                hasDown(input, row, col) && hasRight(input, row, col) -> SouthToEast()
+                hasUp(input, row, col) && hasDown(input, row, col) -> Pipe.Vertical()
+                hasLeft(input, row, col) && hasRight(input, row, col) -> Pipe.Horizontal()
+                hasUp(input, row, col) && hasRight(input, row, col) -> Pipe.NorthToEast()
+                hasUp(input, row, col) && hasLeft(input, row, col) -> Pipe.NorthToWest()
+                hasDown(input, row, col) && hasLeft(input, row, col) -> Pipe.SouthToWest()
+                hasDown(input, row, col) && hasRight(input, row, col) -> Pipe.SouthToEast()
                 else -> error("Invalid pipe at $row, $col")
             }
 

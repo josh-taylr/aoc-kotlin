@@ -1,22 +1,19 @@
-fun main() {
-    fun part1(input: List<String>): Int {
+package aoc2023
+
+import AOCDay
+
+class Day07 : AOCDay(year = "2023", day = "7") {
+    override fun part1(input: List<String>): Int {
         val sortedHands = input.map(Hand::parse).sorted()
         val ranks = 1..sortedHands.count()
         return sortedHands.zip(ranks).sumOf { (hand, rank) -> hand.bid * rank }
     }
 
-    fun part2(input: List<String>): Int {
+    override fun part2(input: List<String>): Int {
         val sortedHands = input.map(Hand::parse).sortedWith(Hand.JokerHandComparator)
         val ranks = 1..sortedHands.count()
         return sortedHands.zip(ranks).sumOf { (hand, rank) -> hand.bid * rank }
     }
-
-    checkValue(6440, part1(readInput("Day07_test")))
-    checkValue(5905, part2(readInput("Day07_test")))
-
-    val input = readInput("Day07")
-    part1(input).println()
-    part2(input).println()
 }
 
 data class Hand(val cards: String, val bid: Int) : Comparable<Hand> {

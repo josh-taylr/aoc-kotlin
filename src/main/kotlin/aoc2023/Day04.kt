@@ -1,5 +1,9 @@
-fun main() {
-    fun part1(input: List<String>): Int {
+package aoc2023
+
+import AOCDay
+
+class Day04 : AOCDay(year = "2023", day = "4")  {
+    override fun part1(input: List<String>): Int {
         fun calcPoints(card: Card): Int {
             if (card.matchingNumbers.isEmpty()) return 0
             return card.matchingNumbers
@@ -14,7 +18,7 @@ fun main() {
         }
     }
 
-    fun part2(input: List<String>): Int {
+    override fun part2(input: List<String>): Int {
         val cards = input.map(Card.Companion::parse).associateBy { it.cardNumber }
         val deque = Pile(cards.values)
         var pileCount = cards.count()
@@ -29,12 +33,6 @@ fun main() {
         }
         return pileCount
     }
-
-    check(part1(readInput("Day04_test")) == 13)
-
-    val input = readInput("Day04")
-    part1(input).println()
-    part2(input).println()
 }
 
 data class Card(val cardNumber: Int, val winningNumbers: List<Int>, val myNumbers: List<Int>) {

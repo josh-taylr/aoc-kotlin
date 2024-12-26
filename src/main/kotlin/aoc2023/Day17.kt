@@ -1,15 +1,17 @@
-import Crucible.Companion.DOWN
-import Crucible.Companion.LEFT
-import Crucible.Companion.RIGHT
-import Crucible.Companion.UP
+package aoc2023
 
-fun main() {
-    fun part1(input: List<String>): Int {
+import AOCDay
+import Vector2D
+import aStar
+import println
+
+class Day17 : AOCDay(year = "2023", day = "17")  {
+    override fun part1(input: List<String>): Int {
         val heatLossMap = HeatLossMap(input)
         val goalBlock = Vector2D(140, 140)
         val results =
             aStar<Crucible>(
-                start = Crucible(Vector2D(0, 0), RIGHT, blocksTraveled = 0),
+                start = Crucible(Vector2D(0, 0), Crucible.RIGHT, blocksTraveled = 0),
                 goal = { it.block == goalBlock },
                 heuristic = { it.block.distance(goalBlock) },
                 neighbors = { it.getNeighbours().filter { it.block in heatLossMap } },
@@ -19,14 +21,9 @@ fun main() {
         return results?.drop(1)?.sumOf { heatLossMap.getValue(it.block) } ?: 0
     }
 
-    fun part2(input: List<String>): Int {
+    override fun part2(input: List<String>): Int {
         return Int.MAX_VALUE
     }
-
-    allChecks(readInput("Day17_test"))
-
-    val input = readInput("Day17")
-    part1(input).println()
 }
 
 private class HeatLossMap(input: List<String>) {
@@ -56,10 +53,10 @@ private data class Crucible(
     val blocksTraveled: Int = 1
 ) {
     val canContinueForward = blocksTraveled < MAX_TRAVELED
-    val canContinueUp = direction * -1 != UP && (direction != UP || canContinueForward)
-    val canContinueRight = direction * -1 != RIGHT && (direction != RIGHT || canContinueForward)
-    val canContinueDown = direction * -1 != DOWN && (direction != DOWN || canContinueForward)
-    val canContinueLeft = direction * -1 != LEFT && (direction != LEFT || canContinueForward)
+    val canContinueUp = direction * -1 != Companion.UP && (direction != Companion.UP || canContinueForward)
+    val canContinueRight = direction * -1 != Companion.RIGHT && (direction != Companion.RIGHT || canContinueForward)
+    val canContinueDown = direction * -1 != Companion.DOWN && (direction != Companion.DOWN || canContinueForward)
+    val canContinueLeft = direction * -1 != Companion.LEFT && (direction != Companion.LEFT || canContinueForward)
 
     fun getNeighbours() =
         buildSet<Crucible> {
@@ -91,8 +88,6 @@ private data class Crucible(
     override fun hashCode() =
         listOf(
                 block.hashCode(),
-                //            direction.hashCode(),
-                //            blocksTraveled.hashCode(),
                 run {
                     listOf(
                             canContinueUp,
@@ -107,10 +102,7 @@ private data class Crucible(
 
     override fun equals(other: Any?) =
         when (other) {
-            is Crucible -> block == other.block
-                //            && direction == other.direction
-                //            && blocksTraveled == other.blocksTraveled
-                &&
+            is Crucible -> block == other.block &&
                     canContinueUp == other.canContinueUp &&
                     canContinueRight == other.canContinueRight &&
                     canContinueDown == other.canContinueDown &&
@@ -130,10 +122,10 @@ private data class Crucible(
 private fun HeatLossMap.overlay(results: List<Crucible>?) = buildString {
     fun Vector2D.toChar() =
         when (this) {
-            UP -> '^'
-            RIGHT -> '>'
-            DOWN -> 'v'
-            LEFT -> '<'
+            Crucible.UP -> '^'
+            Crucible.RIGHT -> '>'
+            Crucible.DOWN -> 'v'
+            Crucible.LEFT -> '<'
             else -> error("Encountered unexpected direction: $this")
         }
 
@@ -145,18 +137,4 @@ private fun HeatLossMap.overlay(results: List<Crucible>?) = buildString {
         }
         appendLine()
     }
-}
-
-private fun allChecks(input: List<String>) {
-    val heatLossMap = HeatLossMap(input)
-    val goalBlock = Vector2D(12, 12)
-    val results =
-        aStar<Crucible>(
-            start = Crucible(Vector2D(0, 0), RIGHT, blocksTraveled = 0),
-            goal = { it.block == goalBlock },
-            heuristic = { it.block.distance(goalBlock).toDouble() },
-            neighbors = { it.getNeighbours().filter { it.block in heatLossMap } },
-            weight = { _, n -> heatLossMap.getValue(n.block).toDouble() },
-        )
-    checkValue(102, results?.drop(1)?.sumOf { heatLossMap.getValue(it.block) } ?: 0)
 }

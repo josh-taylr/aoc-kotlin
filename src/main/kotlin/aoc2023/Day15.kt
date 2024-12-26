@@ -1,14 +1,13 @@
-fun main() {
-    fun part1(input: List<String>) = input.single().split(',').sumOf { Step.parse(it).hashCode() }
+package aoc2023
 
-    fun part2(input: List<String>): Int {
+import AOCDay
+
+class Day15 : AOCDay(year = "2023", day = "15")  {
+    override fun part1(input: List<String>) = input.single().split(',').sumOf { Step.parse(it).hashCode() }
+
+    override fun part2(input: List<String>): Int {
         return Int.MAX_VALUE
     }
-
-    checkValue(1320, part1(readInput("Day15_test")))
-
-    val input = readInput("Day15")
-    part1(input).println()
 }
 
 class Step(private val instruction: String) {

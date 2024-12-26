@@ -1,13 +1,13 @@
-fun main() {
-    fun part1(input: List<String>) = input.map(String::toIntList).sumOf { it.extrapolate().last() }
+package aoc2023
 
-    fun part2(input: List<String>) = input.map(String::toIntList).sumOf { it.extrapolate().first() }
+import AOCDay
+import toIntList
+import deltas
 
-    checkValue(114, part1(readInput("Day09_test")))
+class Day09 : AOCDay(year = "2023", day = "9")  {
+    override fun part1(input: List<String>) = input.map(String::toIntList).sumOf { it.extrapolate().last() }
 
-    val input = readInput("Day09")
-    part1(input).println()
-    part2(input).println()
+    override fun part2(input: List<String>) = input.map(String::toIntList).sumOf { it.extrapolate().first() }
 }
 
 private fun List<Int>.extrapolate(): List<Int> =

@@ -1,3 +1,6 @@
+package aoc2023
+
+import AOCDay
 import org.jetbrains.kotlinx.multik.api.mk
 import org.jetbrains.kotlinx.multik.api.ndarray
 import org.jetbrains.kotlinx.multik.ndarray.data.*
@@ -5,14 +8,14 @@ import org.jetbrains.kotlinx.multik.ndarray.operations.toListD2
 
 private const val CycleCount = 1_000_000_000L
 
-fun main() {
-    fun part1(input: List<String>): Int {
+class Day14 : AOCDay(year = "2023", day = "14")  {
+    override fun part1(input: List<String>): Int {
         val platform = Platform.parse(input)
         platform.moveLever(Platform.Tilt.North)
         return platform.calcLoad()
     }
 
-    fun part2(input: List<String>): Int {
+    override fun part2(input: List<String>): Int {
         val platform = Platform.parse(input)
         val seen = mutableMapOf<Platform, Long>()
         var i = 0L
@@ -35,12 +38,6 @@ fun main() {
 
         return platform.calcLoad()
     }
-
-    allChecks(readInput("Day14_test"))
-
-    val input = readInput("Day14")
-    part1(input).println()
-    part2(input).println()
 }
 
 class Platform(val spaces: D2Array<Int>) {
@@ -158,45 +155,6 @@ class Platform(val spaces: D2Array<Int>) {
             else -> error("Unexpected space: $space")
         }
     }
-}
-
-private fun allChecks(testInput: List<String>) {
-
-    val platform = Platform.parse(testInput)
-    checkValue(
-        """
-        O....#....
-        O.OO#....#
-        .....##...
-        OO.#O....O
-        .O.....O#.
-        O.#..O.#.#
-        ..O..#O..O
-        .......O..
-        #....###..
-        #OO..#....
-    """
-            .trimIndent(),
-        platform.toString()
-    )
-    platform.moveLever(Platform.Tilt.North)
-    checkValue(
-        """
-        OOOO.#.O..
-        OO..#....#
-        OO..O##..O
-        O..#.OO...
-        ........#.
-        ..#....#.#
-        ..O..#.O.O
-        ..O.......
-        #....###..
-        #....#....
-    """
-            .trimIndent(),
-        platform.toString()
-    )
-    checkValue(136, platform.calcLoad())
 }
 
 private fun D2Array<Int>.rotate90() {

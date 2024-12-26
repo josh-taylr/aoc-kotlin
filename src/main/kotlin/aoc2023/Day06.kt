@@ -1,7 +1,11 @@
+package aoc2023
+
+import AOCDay
+import toIntList
 import java.math.BigInteger
 
-fun main() {
-    fun part1(input: List<String>): Int {
+class Day06 : AOCDay(year = "2023", day = "6")  {
+    override fun part1(input: List<String>): Int {
         val times = input[0].substringAfter("Time:").toIntList()
         val records = input[1].substringAfter("Distance:").toIntList()
         val winningStrats =
@@ -14,7 +18,7 @@ fun main() {
         return winningStrats.map(List<Int>::count).fold(1) { acc, count -> acc * count }
     }
 
-    fun part2(input: List<String>): BigInteger {
+    override fun part2(input: List<String>): BigInteger {
         val time = input[0].substringAfter("Time:").filter(Char::isDigit).toBigInteger()
         val record = input[1].substringAfter("Distance:").filter(Char::isDigit).toBigInteger()
 
@@ -29,12 +33,6 @@ fun main() {
 
         return maxHold - minHold + 1.toBigInteger()
     }
-
-    check(part1(readInput("Day06_test")) == 288)
-
-    val input = readInput("Day06")
-    part1(input).println()
-    part2(input).println()
 }
 
 private fun distance(hold: BigInteger, limit: BigInteger): BigInteger {

@@ -1,12 +1,16 @@
-fun main() {
-    fun part1(input: List<String>): Int {
+package aoc2023
+
+import AOCDay
+
+class Day02 : AOCDay(year = "2023", day = "2") {
+    override fun part1(input: List<String>): Int {
         return input.sumOf { line ->
             val game = Game.parse(line)
             if (game.isPosible()) game.id else 0
         }
     }
 
-    fun part2(input: List<String>): Int {
+    override fun part2(input: List<String>): Int {
         return input.sumOf { line ->
             val game = Game.parse(line)
 
@@ -23,13 +27,6 @@ fun main() {
             minBlues * minReds * minGreens
         }
     }
-
-    check(part1(readInput("Day02_test")) == 8)
-    check(part2(readInput("Day02_test2")) == 2286)
-
-    val input = readInput("Day02")
-    part1(input).println()
-    part2(input).println()
 }
 
 class Game(val id: Int, val cubeSets: List<Set<Cubes>>) {
