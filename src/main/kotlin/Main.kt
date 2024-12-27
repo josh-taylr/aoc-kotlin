@@ -26,6 +26,7 @@ fun main() {
         }
         2024 -> when (day) {
             1 -> aoc2024.Day01()
+            2 -> aoc2024.Day02()
             else -> error("Day $day not implemented for year $year")
         }
         else -> error("Year $year not implemented")
